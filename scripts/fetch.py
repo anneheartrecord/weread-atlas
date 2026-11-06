@@ -33,7 +33,7 @@ REVIEW_PAGE = 100
 MAX_REVIEW_PAGES = 100
 
 
-PROGRESS_EVERY = 25  # books per progress line and per save of .atlas/fetch.json
+PROGRESS_EVERY = 25  # books per progress line
 
 def _date(ts):
     if not ts:
@@ -342,30 +342,36 @@ def run(paths, client, full=False, today=None, log=print):
 
     previous_run = lib.read_json(paths.fetch_report)
     if previous_run and not previous_run.get("finished"):
-        log("上一次拉取没有跑完（停在第 %s/%s 本），这次从缓存接着拉。"
-            % (previous_run.get("processed"), previous_run.get("total")))
+        stage = previous_run.get("stage")
+        where = ("书目已全部拉完，停在阅读统计" if stage == "stats" else
+                 "还没拉到书单" if stage == "notebooks" else
+                 "停在第 %s/%s 本" % (previous_run.get("processed"), previous_run.get("total")))
+        log("上一次拉取没有跑完（%s），%s" % (where, "这次加了 --full，全部重新拉。" if full else "这次从缓存接着拉。"))
 
+    stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(started))
+    fetched = skipped = refreshed = 0
+    failed, missing = [], []
+    notebooks = []
+
+    def report(stage, processed=0, finished=False, **extra):
+        # Saved before the first call and after every book, so a run that stops early or
+        # is killed still leaves where it stopped and what failed. `failed` lists every
+        # failure; `missing` the ones whose books have no note at all.
+        r = {"startedAt": stamp, "finished": finished, "stage": stage, "processed": processed,
+             "total": len(notebooks), "fetched": fetched, "skipped": skipped, "progressRefreshed": refreshed,
+             "failed": failed, "missing": missing, "calls": getattr(client, "calls", None),
+             "retried": getattr(client, "retried", None), "http499": getattr(client, "http499", None)}
+        r.update(extra)
+        lib.write_json(paths.fetch_report, r)
+
+    report("notebooks")
     notebooks, total = fetch_notebooks(client)
     lib.write_json(paths.notebooks_cache, notebooks)
     log("有笔记的书 %d 本（/user/notebooks 只列出有笔记的书，书架上其余的书不在其中）" % len(notebooks))
 
     shelf = {} if full else fetch_shelf_state(client, log)
-    fetched = skipped = refreshed = 0
-    failed = []
     raws = []
-
-    def report(processed, finished=False, **extra):
-        # Saved on every progress line, so a run that is killed still leaves its
-        # progress and failures on disk.
-        r = {"startedAt": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(started)),
-             "finished": finished, "processed": processed, "total": len(notebooks),
-             "fetched": fetched, "skipped": skipped, "progressRefreshed": refreshed, "failed": failed,
-             "calls": getattr(client, "calls", None), "retried": getattr(client, "retried", None),
-             "http499": getattr(client, "http499", None)}
-        r.update(extra)
-        lib.write_json(paths.fetch_report, r)
-
-    report(0)
+    report("books")
     for n, nb in enumerate(notebooks, 1):
         bid = str(nb.get("bookId"))
         cache_path = paths.book_cache(bid)
@@ -381,7 +387,7 @@ def run(paths, client, full=False, today=None, log=print):
                 except UpgradeRequired:
                     raise
                 except WereadError as e:
-                    failed.append("%s（%s）进度：%s" % ((nb.get("book") or {}).get("title", ""), bid, e))
+                    failed.append("%s（%s）进度没刷新，笔记保留上次的进度：%s" % ((nb.get("book") or {}).get("title", ""), bid, e))
             raws.append(cached)
         else:
             try:
@@ -394,13 +400,19 @@ def run(paths, client, full=False, today=None, log=print):
             except UpgradeRequired:
                 raise
             except WereadError as e:
-                failed.append("%s（%s）：%s" % ((nb.get("book") or {}).get("title", ""), bid, e))
+                title = (nb.get("book") or {}).get("title", "")
                 if cached:
+                    failed.append("%s（%s）没拉到新内容，笔记保留上次的内容：%s" % (title, bid, e))
                     raws.append(cached)
+                else:
+                    failed.append("%s（%s）没拉到，没有写进笔记：%s" % (title, bid, e))
+                    missing.append("%s（%s）" % (title, bid))
+        report("books", n)
         if n % PROGRESS_EVERY == 0 or n == len(notebooks):
             log("  书目 %d/%d：新拉取 %d，未变化跳过 %d（其中刷新进度 %d），失败 %d"
                 % (n, len(notebooks), fetched, skipped, refreshed, len(failed)))
-            report(n)
+
+    report("stats", len(notebooks))
 
     overall, months, years, months_fetched = fetch_readdata(client, paths, today, log)
     secs = per_book_seconds(months)
@@ -441,9 +453,11 @@ def run(paths, client, full=False, today=None, log=print):
         % (summary["calls"], summary["retried"], summary["http499"], summary["seconds"]))
     for f in failed:
         log("失败：" + f)
-    if failed:
-        log("失败的 %d 本书没有写进笔记，重跑同一条命令会补拉。" % len(failed))
-    report(len(notebooks), finished=True, books=summary["books"], highlights=summary["highlights"],
+    if missing:
+        log("其中 %d 本没有写进笔记，重跑同一条命令会补拉。" % len(missing))
+    if len(failed) > len(missing):
+        log("其中 %d 本这次没更新成功，笔记保留了上次的内容，重跑同一条命令会更新。" % (len(failed) - len(missing)))
+    report("done", len(notebooks), finished=True, books=summary["books"], highlights=summary["highlights"],
            thoughts=summary["thoughts"], seconds=summary["seconds"])
     return summary
 

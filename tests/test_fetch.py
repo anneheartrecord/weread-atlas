@@ -205,7 +205,7 @@ class FetchTest(unittest.TestCase):
                         raise Killed()
                 return fx.FakeClient.call(self, api, **p)
 
-        with mock.patch.object(fetch, "PROGRESS_EVERY", 1), self.assertRaises(Killed):
+        with self.assertRaises(Killed):
             self.run_fetch(DiesMidway(w))
         report = lib.read_json(self.paths.fetch_report)
         self.assertFalse(report["finished"])
@@ -221,6 +221,74 @@ class FetchTest(unittest.TestCase):
         self.assertEqual(report["failed"], [])
         self.assertEqual(report["fetched"], 2)  # the failed book and the one being fetched when killed
         self.assertIn(seen[0], self.books())
+
+    def test_failures_say_whether_the_note_is_missing_or_kept(self):
+        w = fx.default_world()
+        self.run_fetch(fx.FakeClient(w))  # 1002 is cached from here on
+        for nb in w["notebooks"]:
+            if nb["bookId"] == "1002":
+                nb["sort"] += 1  # its notes changed, so it is refetched
+
+        class Busy(fx.FakeClient):
+            def call(self, api, **p):
+                if api == "/book/info" and p.get("bookId") == "1002":
+                    raise weread_client.ApiError(api, -1, "服务繁忙")
+                return fx.FakeClient.call(self, api, **p)
+
+        self.out.clear()
+        summary = self.run_fetch(Busy(w))
+        report = lib.read_json(self.paths.fetch_report)
+        self.assertEqual(len(report["failed"]), 1)
+        self.assertEqual(report["missing"], [])
+        self.assertIn("1002", self.books())  # kept with the older content
+        self.assertTrue(any("保留了上次的内容" in line for line in self.out))
+        self.assertFalse(any("没有写进笔记，重跑" in line for line in self.out))
+
+        shutil.rmtree(self.dir)
+        self.dir = tempfile.mkdtemp()
+        self.paths = lib.Paths(self.dir)
+        self.out.clear()
+        summary = self.run_fetch(Busy(w))  # no cache: the book has no note at all
+        report = lib.read_json(self.paths.fetch_report)
+        self.assertEqual(len(report["missing"]), 1)
+        self.assertNotIn("1002", self.books())
+        self.assertTrue(any("1 本没有写进笔记" in line for line in self.out))
+        self.assertEqual(len(summary["failed"]), 1)
+
+    def test_run_that_fails_before_the_books_is_not_left_as_finished(self):
+        w = fx.default_world()
+        self.run_fetch(fx.FakeClient(w))
+        self.assertTrue(lib.read_json(self.paths.fetch_report)["finished"])
+
+        class Down(fx.FakeClient):
+            def call(self, api, **p):
+                raise weread_client.WereadError("%s 连续 5 次失败，最后一次：timed out" % api)
+
+        with self.assertRaises(weread_client.WereadError):
+            self.run_fetch(Down(w))
+        report = lib.read_json(self.paths.fetch_report)
+        self.assertFalse(report["finished"])
+        self.assertEqual(report["stage"], "notebooks")
+        self.out.clear()
+        self.run_fetch(fx.FakeClient(w), full=True)
+        self.assertTrue(any("还没拉到书单" in line and "--full" in line for line in self.out))
+
+    def test_stats_failure_after_every_book_is_reported_as_such(self):
+        w = fx.default_world()
+
+        class StatsDown(fx.FakeClient):
+            def call(self, api, **p):
+                if api.startswith("/readdata"):
+                    raise weread_client.WereadError("%s 连续 5 次失败" % api)
+                return fx.FakeClient.call(self, api, **p)
+
+        with self.assertRaises(weread_client.WereadError):
+            self.run_fetch(StatsDown(w))
+        report = lib.read_json(self.paths.fetch_report)
+        self.assertEqual((report["stage"], report["processed"], report["finished"]), ("stats", 4, False))
+        self.out.clear()
+        self.run_fetch(fx.FakeClient(w))
+        self.assertTrue(any("停在阅读统计" in line for line in self.out))
 
     def test_upgrade_info_stops_with_exit_3(self):
         c = fx.FakeClient(fx.default_world(), upgrade_on=("/book/info", "1004"))
