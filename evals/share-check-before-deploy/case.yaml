@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: share-check-before-deploy
+expected_outcome: |
+  The page's thoughts are screened for personal content (money, income, family, partner, employer,
+  health, contact numbers). The candidate list is put in front of the user to choose from rather than
+  silently decided. Chosen items are hidden from the page only; the notes under 书/ stay unchanged.
+  The page is re-rendered and the hidden texts no longer appear in index.html.
