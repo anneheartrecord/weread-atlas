@@ -1,0 +1,9 @@
+{
+ "rootName": "微信读书",
+ "title": "书房",
+ "theme": "舆图",
+ "topN": 50,
+ "exclude": [
+  "私房菜馆"
+ ]
+}

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="@@ATLAS_THEME@@">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="@@ATLAS_SCHEME@@">
+<title>@@ATLAS_TITLE@@</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaigbscreen.css">
+<style>
+/*@@ATLAS_CSS@@*/
+</style>
+</head>
+<body>
+<main class="bk-page" id="bk-app"></main>
+
+<dialog class="bk-dialog" id="bk-dialog" aria-labelledby="bk-dialog-title">
+  <div class="bk-dialog-inner">
+    <button class="bk-close" type="button" data-close aria-label="关闭">×</button>
+    <div class="bk-dialog-body" id="bk-dialog-body"></div>
+  </div>
+</dialog>
+<div class="bk-tip" id="bk-tip" role="tooltip" hidden></div>
+
+<script type="application/json" id="bk-data">@@ATLAS_DATA@@</script>
+<script>
+/*@@ATLAS_JS@@*/
+</script>
+</body>
+</html>

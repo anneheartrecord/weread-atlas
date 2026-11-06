@@ -1,0 +1,402 @@
+{
+ "generatedAt": "2026-11-06",
+ "since": "2022-03-04",
+ "totalHours": 994,
+ "readDays": 1589,
+ "readBooks": 86,
+ "finishedBooks": 41,
+ "notes": 12480,
+ "years": [
+  {
+   "year": 2022,
+   "hours": 53.0,
+   "days": 84,
+   "finished": 5
+  },
+  {
+   "year": 2023,
+   "hours": 161.5,
+   "days": 258,
+   "finished": 17
+  },
+  {
+   "year": 2024,
+   "hours": 230.7,
+   "days": 369,
+   "finished": 25
+  },
+  {
+   "year": 2025,
+   "hours": 281.3,
+   "days": 450,
+   "finished": 31
+  },
+  {
+   "year": 2026,
+   "hours": 267.9,
+   "days": 428,
+   "finished": 29
+  }
+ ],
+ "months": [
+  {
+   "month": "2022-03",
+   "hours": 11.1
+  },
+  {
+   "month": "2022-04",
+   "hours": 11.7
+  },
+  {
+   "month": "2022-05",
+   "hours": 0.0
+  },
+  {
+   "month": "2022-06",
+   "hours": 0.0
+  },
+  {
+   "month": "2022-07",
+   "hours": 10.7
+  },
+  {
+   "month": "2022-08",
+   "hours": 5.6
+  },
+  {
+   "month": "2022-09",
+   "hours": 3.9
+  },
+  {
+   "month": "2022-10",
+   "hours": 2.9
+  },
+  {
+   "month": "2022-11",
+   "hours": 3.0
+  },
+  {
+   "month": "2022-12",
+   "hours": 4.1
+  },
+  {
+   "month": "2023-01",
+   "hours": 0.0
+  },
+  {
+   "month": "2023-02",
+   "hours": 12.1
+  },
+  {
+   "month": "2023-03",
+   "hours": 12.2
+  },
+  {
+   "month": "2023-04",
+   "hours": 14.9
+  },
+  {
+   "month": "2023-05",
+   "hours": 17.0
+  },
+  {
+   "month": "2023-06",
+   "hours": 18.1
+  },
+  {
+   "month": "2023-07",
+   "hours": 21.1
+  },
+  {
+   "month": "2023-08",
+   "hours": 17.0
+  },
+  {
+   "month": "2023-09",
+   "hours": 15.2
+  },
+  {
+   "month": "2023-10",
+   "hours": 13.1
+  },
+  {
+   "month": "2023-11",
+   "hours": 11.1
+  },
+  {
+   "month": "2023-12",
+   "hours": 9.7
+  },
+  {
+   "month": "2024-01",
+   "hours": 12.3
+  },
+  {
+   "month": "2024-02",
+   "hours": 13.0
+  },
+  {
+   "month": "2024-03",
+   "hours": 11.7
+  },
+  {
+   "month": "2024-04",
+   "hours": 14.3
+  },
+  {
+   "month": "2024-05",
+   "hours": 17.3
+  },
+  {
+   "month": "2024-06",
+   "hours": 20.3
+  },
+  {
+   "month": "2024-07",
+   "hours": 25.7
+  },
+  {
+   "month": "2024-08",
+   "hours": 24.2
+  },
+  {
+   "month": "2024-09",
+   "hours": 24.7
+  },
+  {
+   "month": "2024-10",
+   "hours": 24.1
+  },
+  {
+   "month": "2024-11",
+   "hours": 22.6
+  },
+  {
+   "month": "2024-12",
+   "hours": 20.5
+  },
+  {
+   "month": "2025-01",
+   "hours": 21.4
+  },
+  {
+   "month": "2025-02",
+   "hours": 19.7
+  },
+  {
+   "month": "2025-03",
+   "hours": 15.9
+  },
+  {
+   "month": "2025-04",
+   "hours": 16.0
+  },
+  {
+   "month": "2025-05",
+   "hours": 17.3
+  },
+  {
+   "month": "2025-06",
+   "hours": 19.6
+  },
+  {
+   "month": "2025-07",
+   "hours": 25.4
+  },
+  {
+   "month": "2025-08",
+   "hours": 25.5
+  },
+  {
+   "month": "2025-09",
+   "hours": 28.2
+  },
+  {
+   "month": "2025-10",
+   "hours": 30.2
+  },
+  {
+   "month": "2025-11",
+   "hours": 31.1
+  },
+  {
+   "month": "2025-12",
+   "hours": 31.0
+  },
+  {
+   "month": "2026-01",
+   "hours": 32.9
+  },
+  {
+   "month": "2026-02",
+   "hours": 31.0
+  },
+  {
+   "month": "2026-03",
+   "hours": 25.9
+  },
+  {
+   "month": "2026-04",
+   "hours": 23.9
+  },
+  {
+   "month": "2026-05",
+   "hours": 22.6
+  },
+  {
+   "month": "2026-06",
+   "hours": 22.3
+  },
+  {
+   "month": "2026-07",
+   "hours": 26.1
+  },
+  {
+   "month": "2026-08",
+   "hours": 25.0
+  },
+  {
+   "month": "2026-09",
+   "hours": 27.6
+  },
+  {
+   "month": "2026-10",
+   "hours": 30.6
+  }
+ ],
+ "hourly": [
+  {
+   "hour": 0,
+   "hours": 7.1
+  },
+  {
+   "hour": 1,
+   "hours": 4.2
+  },
+  {
+   "hour": 2,
+   "hours": 0.3
+  },
+  {
+   "hour": 3,
+   "hours": 0.3
+  },
+  {
+   "hour": 4,
+   "hours": 0.3
+  },
+  {
+   "hour": 5,
+   "hours": 0.3
+  },
+  {
+   "hour": 6,
+   "hours": 0.3
+  },
+  {
+   "hour": 7,
+   "hours": 4.9
+  },
+  {
+   "hour": 8,
+   "hours": 6.0
+  },
+  {
+   "hour": 9,
+   "hours": 5.0
+  },
+  {
+   "hour": 10,
+   "hours": 3.8
+  },
+  {
+   "hour": 11,
+   "hours": 4.8
+  },
+  {
+   "hour": 12,
+   "hours": 7.5
+  },
+  {
+   "hour": 13,
+   "hours": 9.0
+  },
+  {
+   "hour": 14,
+   "hours": 7.5
+  },
+  {
+   "hour": 15,
+   "hours": 4.6
+  },
+  {
+   "hour": 16,
+   "hours": 2.7
+  },
+  {
+   "hour": 17,
+   "hours": 2.1
+  },
+  {
+   "hour": 18,
+   "hours": 2.0
+  },
+  {
+   "hour": 19,
+   "hours": 2.0
+  },
+  {
+   "hour": 20,
+   "hours": 2.0
+  },
+  {
+   "hour": 21,
+   "hours": 2.0
+  },
+  {
+   "hour": 22,
+   "hours": 12.0
+  },
+  {
+   "hour": 23,
+   "hours": 10.5
+  }
+ ],
+ "categories": [
+  {
+   "name": "经济理财",
+   "hours": 182.4,
+   "count": 31
+  },
+  {
+   "name": "个人成长",
+   "hours": 96.0,
+   "count": 18
+  },
+  {
+   "name": "医学健康",
+   "hours": 61.3,
+   "count": 9
+  },
+  {
+   "name": "文学",
+   "hours": 44.8,
+   "count": 12
+  },
+  {
+   "name": "历史",
+   "hours": 30.2,
+   "count": 7
+  },
+  {
+   "name": "心理",
+   "hours": 22.5,
+   "count": 5
+  },
+  {
+   "name": "小说",
+   "hours": 12.1,
+   "count": 4
+  }
+ ]
+}
