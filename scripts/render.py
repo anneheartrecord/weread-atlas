@@ -243,6 +243,7 @@ def build_page_data(vault: Dict[str, Any]) -> Dict[str, Any]:
         "topics": page_topics,
         "books": page_books,
         "relations": relations,
+        "veins": veins_overview(relations),
         "ring": ring_layout(page_topics, vault["domains"], relations),
     }
 
@@ -290,6 +291,21 @@ def build_relations(topics: List[Dict[str, Any]], related: List[List[Dict[str, s
         r.setdefault("shared", 0)
     out.sort(key=lambda r: (not r["cross"], r["kind"] != "concept", -r["shared"]))
     return out
+
+
+def veins_overview(relations: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """What the side panel lists before a topic is picked: indices into `relations`.
+
+    Only relations with a written reason (kind "concept") are listed: cross-domain
+    ones when there are any, otherwise all of them. Pairs that merely share books
+    stay as dashed lines on the ring; "共读 2 本书" is not a reason and would only
+    pad the panel.
+    """
+    concept = [k for k, r in enumerate(relations) if r["kind"] == "concept"]
+    cross = [k for k in concept if relations[k]["cross"]]
+    if cross:
+        return {"kicker": "跨领域的脉络", "items": cross}
+    return {"kicker": "主题之间的脉络", "items": concept}
 
 
 # --------------------------------------------------------------------- ring
@@ -475,8 +491,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     mapped = sum(1 for d in data["domains"] if d["topics"] > 0)
     print(f"书房页：{out}")
     cross = sum(1 for r in data["relations"] if r["cross"])
+    reasoned = [r for r in data["relations"] if r["kind"] == "concept"]
     print(f"书 {len(data['books'])} 本｜主题 {len(data['topics'])} 个｜领域 {mapped} 个｜"
           f"主题关系 {len(data['relations'])} 条，其中跨领域 {cross} 条｜{size_kb:.0f} KB")
+    print(f"写了理由的关系 {len(reasoned)} 条（跨领域 {sum(1 for r in reasoned if r['cross'])} 条，脉络栏列出这些）；"
+          f"只是共读的 {len(data['relations']) - len(reasoned)} 条，只在环上画虚线")
     if warnings:
         print(f"警告 {len(warnings)} 条：")
         for w in warnings:

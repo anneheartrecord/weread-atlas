@@ -248,6 +248,14 @@ class TopicsTest(Base):
             self.assertIn(needle, joined)
         self.assertFalse(os.path.exists(self.paths.topics_dir))
 
+    def test_topic_named_like_a_book_is_rejected(self):
+        data = self.good_topics()
+        data["topics"][0]["name"] = "星海旅人"  # also a book's file name: [[星海旅人]] would be ambiguous
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 1)
+        self.assertIn("和书的文件名重名", "\n".join(out))
+
     def test_small_plan_without_related_still_writes(self):
         self.write_topics(self.good_topics())
         out = []

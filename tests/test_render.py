@@ -129,6 +129,24 @@ class TestRelations(RenderCase):
         self.assertEqual(order, sorted(order))
         self.assertEqual(len(data["ring"]["roads"]), len(rels))
 
+    def test_default_panel_lists_only_reasoned_relations(self):
+        html, summary = self.render()
+        data, _ = page_data(html)
+        rels = data["relations"]
+        shown = [rels[k] for k in data["veins"]["items"]]
+        self.assertEqual(data["veins"]["kicker"], "跨领域的脉络")
+        self.assertTrue(shown)
+        self.assertTrue(all(r["kind"] == "concept" and r["cross"] for r in shown))
+        self.assertIn("只是共读的 1 条", summary)
+
+    def test_panel_falls_back_then_stays_empty_without_reasons(self):
+        rels = [
+            {"a": 0, "b": 1, "kind": "concept", "cross": False},
+            {"a": 0, "b": 2, "kind": "books", "cross": True},
+        ]
+        self.assertEqual(render.veins_overview(rels), {"kicker": "主题之间的脉络", "items": [0]})
+        self.assertEqual(render.veins_overview(rels[1:]), {"kicker": "主题之间的脉络", "items": []})
+
     def test_merge_rules(self):
         topics = [
             {"name": "甲", "domain": "一", "books": [0, 1, 2]},

@@ -83,6 +83,7 @@ def validate(data, books):
         errors.append("topics 必须是非空列表")
         topics = []
     names = {t.get("name") for t in topics if isinstance(t, dict) and _is_text(t.get("name"))}
+    book_files = {b["fileName"].casefold() for b in books}
     seen = {}
     for i, t in enumerate(topics, 1):
         if not isinstance(t, dict):
@@ -99,6 +100,9 @@ def validate(data, books):
             if key in seen:
                 errors.append("主题重名：%s" % name)
             seen[key] = True
+            if key in book_files:
+                errors.append("%s和书的文件名重名，Obsidian 里的 [[%s]] 会分不清指的是书还是主题；"
+                              "给主题换个说出判断的名字" % (label, name))
         if t.get("domain") not in domains:
             errors.append("%s的领域「%s」不在 domains 里" % (label, t.get("domain")))
         one = t.get("oneLiner")

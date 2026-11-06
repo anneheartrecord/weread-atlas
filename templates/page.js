@@ -148,7 +148,7 @@
     atlas.append(scroll, veins);
     app.append(atlas);
 
-    var crossRels = relations.filter(function (r) { return r.cross; });
+    var veinsOverview = D.veins || { kicker: "主题之间的脉络", items: [] };
     var pinned = null;
 
     var light = function (pick, center) {
@@ -199,10 +199,12 @@
     var overview = function () {
       head.replaceChildren();
       list.replaceChildren();
-      var shown = crossRels.length ? crossRels : relations;
-      head.append(el("p", "bk-veins-kicker", crossRels.length ? "跨领域的脉络" : "主题之间的脉络"));
+      var shown = veinsOverview.items.map(function (k) { return relations[k]; });
+      head.append(el("p", "bk-veins-kicker", veinsOverview.kicker));
       if (!shown.length) {
-        list.append(el("li", "bk-vein-empty", "主题之间还没有记录到联系。点一个主题，看它的书和观点。"));
+        list.append(el("li", "bk-vein-empty", relations.length
+          ? "主题之间还没有写出联系的理由。环上的虚线连着共读过同一批书的主题，点一个主题看看。"
+          : "主题之间还没有记录到联系。点一个主题，看它的书和观点。"));
         return;
       }
       shown.forEach(function (r) {
@@ -226,14 +228,16 @@
       var mine = relations
         .filter(function (r) { return r.a === i || r.b === i; })
         .sort(function (x, y) {
-          return Number(y.cross) - Number(x.cross) || Number(y.kind === "concept") - Number(x.kind === "concept");
+          // Relations with a reason first (cross-domain before same-domain), then pairs that only share books.
+          return Number(y.kind === "concept") - Number(x.kind === "concept") || Number(y.cross) - Number(x.cross);
         });
       if (!mine.length) list.append(el("li", "bk-vein-empty", "这个主题和其他主题之间还没有记录到联系。"));
       mine.forEach(function (r) {
         var other = r.a === i ? r.b : r.a;
         var pair = el("span", "bk-vein-pair", topics[other].name);
         if (r.cross) pair.append(el("em", null, topics[other].domain));
-        list.append(veinButton(i, other, pair, r.why, r.kind === "concept" && r.sharedBooks ? "共读 " + r.sharedBooks : ""));
+        if (r.kind === "concept") list.append(veinButton(i, other, pair, r.why, r.sharedBooks ? "共读 " + r.sharedBooks : ""));
+        else list.append(veinButton(i, other, pair, "只是共读，还没写出联系", "共读 " + r.sharedBooks));
       });
     };
     var pin = function (i) {
