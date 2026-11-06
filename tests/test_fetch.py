@@ -31,6 +31,16 @@ class FetchTest(unittest.TestCase):
     def books(self):
         return {b["bookId"]: b for b in lib.read_json(self.paths.books_json)}
 
+    def test_first_run_writes_default_config_and_keeps_user_edits(self):
+        self.run_fetch(fx.FakeClient(fx.default_world()))
+        cfg = lib.read_json(self.paths.config)
+        self.assertEqual(cfg["rootName"], "微信读书")
+        self.assertEqual(cfg["exclude"], [])
+        cfg["title"] = "我的书脉"
+        lib.save_config(self.dir, cfg)
+        self.run_fetch(fx.FakeClient(fx.default_world()))
+        self.assertEqual(lib.read_json(self.paths.config)["title"], "我的书脉")
+
     def test_books_json_shape(self):
         summary = self.run_fetch(fx.FakeClient(fx.default_world()))
         books = self.books()

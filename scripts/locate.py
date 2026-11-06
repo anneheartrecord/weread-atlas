@@ -3,7 +3,8 @@
 
 Reads Obsidian's own vault registry (obsidian.json), so iCloud and other
 deep vault paths are found without scanning the home folder. For each vault
-it reports folders up to two levels deep that hold `.atlas/config.json`.
+it reports folders up to two levels deep that hold `.atlas/config.json`
+(or `.atlas/books.json`, left by runs from before the config was written on fetch).
 
 Output, one vault per block:
   库：<vault name>  <vault path>
@@ -42,6 +43,11 @@ def vaults_from_registry(registries=None):
     return [(os.path.basename(p.rstrip("/\\")), p, ts) for p, ts in sorted(seen.items(), key=lambda x: -x[1])]
 
 
+def _is_root(folder):
+    atlas = os.path.join(folder, ".atlas")
+    return os.path.isfile(os.path.join(atlas, "config.json")) or os.path.isfile(os.path.join(atlas, "books.json"))
+
+
 def roots_in(vault):
     """Folders up to two levels below the vault that already hold a 书脉 config."""
     found = []
@@ -49,7 +55,7 @@ def roots_in(vault):
         a = os.path.join(vault, depth1)
         if depth1.startswith(".") or not os.path.isdir(a):
             continue
-        if os.path.isfile(os.path.join(a, ".atlas", "config.json")):
+        if _is_root(a):
             found.append(a)
             continue
         try:
@@ -58,7 +64,7 @@ def roots_in(vault):
             continue
         for depth2 in children:
             b = os.path.join(a, depth2)
-            if not depth2.startswith(".") and os.path.isfile(os.path.join(b, ".atlas", "config.json")):
+            if not depth2.startswith(".") and _is_root(b):
                 found.append(b)
     return found
 

@@ -333,6 +333,10 @@ def run(paths, client, full=False, today=None, log=print):
     started = time.time()
     today = today or datetime.date.today()
     os.makedirs(paths.cache, exist_ok=True)
+    # The config file marks this folder as a 书脉 root (locate.py looks for it), so a
+    # first run writes the defaults; an existing config is left exactly as the user keeps it.
+    if not os.path.exists(paths.config):
+        lib.save_config(paths.root, lib.load_config(paths.root))
 
     notebooks, total = fetch_notebooks(client)
     lib.write_json(paths.notebooks_cache, notebooks)

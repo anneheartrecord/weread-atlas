@@ -37,6 +37,13 @@ class LocateTest(unittest.TestCase):
         self.assertEqual(locate.roots_in(self.new), [os.path.join(self.new, "阅读", "微信读书")])
         self.assertEqual(locate.roots_in(self.old), [])
 
+    def test_root_from_an_older_run_without_config_is_found(self):
+        older = os.path.join(self.old, "微信读书", ".atlas")
+        os.makedirs(older)
+        with open(os.path.join(older, "books.json"), "w") as f:
+            f.write("[]")
+        self.assertEqual(locate.roots_in(self.old), [os.path.join(self.old, "微信读书")])
+
     def test_missing_registry_is_empty(self):
         self.assertEqual(locate.vaults_from_registry([os.path.join(self.tmp.name, "nope.json")]), [])
 
