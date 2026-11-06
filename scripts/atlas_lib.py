@@ -42,6 +42,7 @@ class Paths(object):
         self.notebooks_cache = os.path.join(self.cache, "notebooks.json")
         self.books_json = os.path.join(self.atlas, "books.json")
         self.stats_json = os.path.join(self.atlas, "stats.json")
+        self.fetch_report = os.path.join(self.atlas, "fetch.json")
         self.topics_json = os.path.join(self.atlas, "topics.json")
         self.digest_dir = os.path.join(self.atlas, "digest")
         self.books_dir = os.path.join(self.root, "书")

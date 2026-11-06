@@ -80,7 +80,9 @@ class FetchTest(unittest.TestCase):
         self.assertEqual(s["totalHours"], 31)
         self.assertEqual(s["readBooks"], 12)
         self.assertEqual(s["finishedBooks"], 4)
-        self.assertEqual(s["notes"], 15000)
+        # exact count of what was exported, not the API's rounded "1.5万条"
+        self.assertEqual(s["notes"], sum(b["marks"] + b["thoughts"] for b in self.books().values()))
+        self.assertNotEqual(s["notes"], 15000)
         self.assertEqual(s["generatedAt"], "2026-11-06")
         self.assertEqual([m["month"] for m in s["months"]], ["2026-08", "2026-09", "2026-10", "2026-11"])
         self.assertEqual(s["months"][1]["hours"], 2.0)
@@ -179,6 +181,46 @@ class FetchTest(unittest.TestCase):
         summary = self.run_fetch(Failing(w))
         self.assertEqual(len(summary["failed"]), 1)
         self.assertNotIn("1002", self.books())
+        report = lib.read_json(self.paths.fetch_report)
+        self.assertTrue(report["finished"])
+        self.assertEqual(report["failed"], summary["failed"])
+        self.assertIn("1002", report["failed"][0])
+        self.assertTrue(any("重跑同一条命令会补拉" in line for line in self.out))
+
+    def test_killed_run_leaves_progress_and_failures_on_disk(self):
+        w = fx.default_world()
+        seen = []
+
+        class Killed(Exception):
+            pass
+
+        class DiesMidway(fx.FakeClient):
+            # the first book fails, the run is killed while fetching the last one
+            def call(self, api, **p):
+                if api == "/book/info":
+                    seen.append(p["bookId"])
+                    if len(seen) == 1:
+                        raise weread_client.ApiError(api, -1, "书籍不存在")
+                    if len(seen) == len(w["notebooks"]):
+                        raise Killed()
+                return fx.FakeClient.call(self, api, **p)
+
+        with mock.patch.object(fetch, "PROGRESS_EVERY", 1), self.assertRaises(Killed):
+            self.run_fetch(DiesMidway(w))
+        report = lib.read_json(self.paths.fetch_report)
+        self.assertFalse(report["finished"])
+        self.assertEqual(report["processed"], len(w["notebooks"]) - 1)
+        self.assertEqual(len(report["failed"]), 1)
+        self.assertIn(seen[0], report["failed"][0])
+
+        self.out.clear()
+        self.run_fetch(fx.FakeClient(w))
+        self.assertTrue(any("上一次拉取没有跑完" in line for line in self.out))
+        report = lib.read_json(self.paths.fetch_report)
+        self.assertTrue(report["finished"])
+        self.assertEqual(report["failed"], [])
+        self.assertEqual(report["fetched"], 2)  # the failed book and the one being fetched when killed
+        self.assertIn(seen[0], self.books())
 
     def test_upgrade_info_stops_with_exit_3(self):
         c = fx.FakeClient(fx.default_world(), upgrade_on=("/book/info", "1004"))

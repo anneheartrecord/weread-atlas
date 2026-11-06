@@ -17,6 +17,7 @@
     cache/             接口原始回包，按 bookId 一个文件；notebooks.json 是笔记本列表，readdata/ 存阅读统计的回包
     books.json         整理后的书目数据
     stats.json         阅读统计
+    fetch.json         最近一次拉取的进度和失败名单，每 25 本存一次，被中断也留得下来
     topics.json        agent 写的主题方案
     blocks.json        每个生成区块上次写入时的指纹，用来发现区块里的手动改动
     overwritten/       区块被手动改过时，重写前的原文备份
