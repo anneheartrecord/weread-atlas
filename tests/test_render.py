@@ -111,7 +111,8 @@ class TestRelations(RenderCase):
         html, summary = self.render()
         data, _ = page_data(html)
         rels = data["relations"]
-        self.assertIn("主题关系 4 条，其中跨领域 2 条", summary)
+        self.assertIn("写了理由的关系 3 条，其中跨领域 2 条，脉络栏列出这些；另有只是共读的 1 条", summary)
+        self.assertNotIn("主题关系", summary)
         by_pair = {frozenset(self.names(data, r)): r for r in rels}
         self.assertEqual(len(by_pair), len(rels))  # both cards list the pair, the page has it once
         cross = by_pair[frozenset({"习惯的设计", "复利与耐心"})]
@@ -253,7 +254,9 @@ class TestData(RenderCase):
         self.assertEqual(names[-1], vault_read.UNSORTED)
         self.assertEqual(data["title"], "书房")
         self.assertEqual(len(data["stats"]["hourly"]), 24)
-        self.assertIn("书 12 本｜主题 5 个｜领域 4 个，其中 3 个有主题画在环上｜主题关系 4 条", summary)
+        # 未归类 is not counted as a domain, so the count matches topics.py
+        unsorted = data["domains"][-1]["books"]
+        self.assertIn("书 12 本｜主题 5 个｜领域 3 个，另有 %d 本书没有分到领域｜" % unsorted, summary)
 
     def test_per_book_limits_and_card_text(self):
         data, _ = page_data(self.render()[0])

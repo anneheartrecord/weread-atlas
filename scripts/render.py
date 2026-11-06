@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from vault_read import read_vault  # noqa: E402
+from vault_read import UNSORTED, read_vault  # noqa: E402
 
 TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
 DEFAULT_TITLE = "书脉"
@@ -488,16 +488,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     out.write_text(text, encoding="utf-8")
 
     size_kb = len(text.encode("utf-8")) / 1024
-    mapped = sum(1 for d in data["domains"] if d["topics"] > 0)
+    # 未归类 holds the books with no domain; it is not one of the user's domains, so the
+    # count matches what topics.py printed.
+    real = [d for d in data["domains"] if d["name"] != UNSORTED]
+    unsorted = sum(d["books"] for d in data["domains"] if d["name"] == UNSORTED)
+    mapped = sum(1 for d in real if d["topics"] > 0)
+    domains_note = f"领域 {len(real)} 个" if mapped == len(real) else \
+        f"领域 {len(real)} 个，其中 {mapped} 个有主题画在环上"
+    if unsorted:
+        domains_note += f"，另有 {unsorted} 本书没有分到领域"
     print(f"书房页：{out}")
-    cross = sum(1 for r in data["relations"] if r["cross"])
     reasoned = [r for r in data["relations"] if r["kind"] == "concept"]
-    domains_note = f"领域 {mapped} 个" if mapped == len(data["domains"]) else \
-        f"领域 {len(data['domains'])} 个，其中 {mapped} 个有主题画在环上"
-    print(f"书 {len(data['books'])} 本｜主题 {len(data['topics'])} 个｜{domains_note}｜"
-          f"主题关系 {len(data['relations'])} 条，其中跨领域 {cross} 条｜{size_kb:.0f} KB")
-    print(f"写了理由的关系 {len(reasoned)} 条（跨领域 {sum(1 for r in reasoned if r['cross'])} 条，脉络栏列出这些）；"
-          f"只是共读的 {len(data['relations']) - len(reasoned)} 条，只在环上画虚线")
+    print(f"书 {len(data['books'])} 本｜主题 {len(data['topics'])} 个｜{domains_note}｜{size_kb:.0f} KB")
+    print(f"写了理由的关系 {len(reasoned)} 条，其中跨领域 {sum(1 for r in reasoned if r['cross'])} 条，脉络栏列出这些；"
+          f"另有只是共读的 {len(data['relations']) - len(reasoned)} 条，只在环上画虚线")
     if warnings:
         print(f"警告 {len(warnings)} 条：")
         for w in warnings:

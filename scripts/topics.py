@@ -362,8 +362,8 @@ def render_overview(stats, books, domains, topics, topic_books, book_domains):
                         stats.get("readBooks", 0), stats.get("finishedBooks", 0), stats.get("notes", 0)))
     placed = sum(1 for b in books if book_domains.get(b["fileName"]))
     in_topics = len({b["fileName"] for bs in topic_books.values() for b in bs})
-    parts.append("书脉收录有笔记的书 %d 本，%d 本归入主题，%d 本已分到领域。"
-                 % (len(books), in_topics, placed))
+    parts.append("书脉收录有笔记的书 %d 本：%d 本归入了主题，%d 本分到了领域，还有 %d 本不在任何主题里。"
+                 % (len(books), in_topics, placed, len(books) - in_topics))
     for d in domains:
         dbooks = [b for b in books if d in book_domains.get(b["fileName"], [])]
         hours = round(sum(b.get("hours") or 0 for b in dbooks), 1)
@@ -376,7 +376,7 @@ def render_overview(stats, books, domains, topics, topic_books, book_domains):
         parts.append("\n".join(lines))
     rest = [b for b in books if not book_domains.get(b["fileName"])]
     if rest:
-        parts.append("## 未归类\n\n%d 本书。" % len(rest))
+        parts.append("## 未归类\n\n%d 本书还没有分到任何领域。" % len(rest))
     return "\n\n".join(parts)
 
 
