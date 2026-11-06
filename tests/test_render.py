@@ -93,10 +93,12 @@ class TestPage(RenderCase):
         self.assertEqual(urls, {
             "https://cdn.jsdelivr.net",
             "https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaigbscreen.css",
-            "https://fonts.googleapis.com",
-            "https://fonts.gstatic.com",
-            "https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500&amp;family=Noto+Serif+SC:wght@400;600&amp;display=swap",
+            "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.3.1/400.css",
+            "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.3.1/600.css",
+            "https://cdn.jsdelivr.net/npm/@fontsource/eb-garamond@5.3.0/400.css",
         })
+        # Google Fonts is unreachable from mainland China, where most WeRead users are.
+        self.assertNotIn("googleapis", html)
         self.assertNotIn("<script src", html)
         self.assertNotIn("@import", html)
 
