@@ -163,7 +163,9 @@ def clean_stats(stats: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
 
 def build_page_data(vault: Dict[str, Any]) -> Dict[str, Any]:
     fragments = vault["config"]["exclude"]
-    books, topics = vault["books"], vault["topics"]
+    hidden = set(vault["config"].get("hideBooks") or [])
+    books = [b for b in vault["books"] if b["file"] not in hidden]
+    topics = vault["topics"]
     book_idx = {b["file"]: i for i, b in enumerate(books)}
     title_idx = {b["title"]: i for i, b in enumerate(books)}
     topic_idx = {t["name"]: i for i, t in enumerate(topics)}
@@ -183,7 +185,8 @@ def build_page_data(vault: Dict[str, Any]) -> Dict[str, Any]:
             "author": b["author"],
             "category": b["category"],
             "cover": b["cover"] if re.match(r"^https?://", b["cover"]) else "",
-            "link": b["link"] if b["link"] and re.match(r"^(https?|weread)://", b["link"]) else None,
+            # Imported books (bookId CB_…) only open for their owner, so their links are left off.
+            "link": b["link"] if b["link"] and re.match(r"^(https?|weread)://", b["link"]) and not b.get("bookId", "").startswith("CB_") else None,
             "progress": b["progress"],
             "finished": b["finished"],
             "readAt": b["readAt"],

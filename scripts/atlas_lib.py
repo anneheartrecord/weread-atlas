@@ -21,6 +21,7 @@ DEFAULT_CONFIG = {
     "theme": "舆图",
     "topN": 50,
     "exclude": [],
+    "hideBooks": [],
 }
 THEMES = ("舆图", "羊皮纸", "星空")
 
@@ -69,8 +70,9 @@ def load_config(root):
         if not isinstance(data, dict):
             raise ValueError("%s must be a JSON object" % path)
         cfg.update(data)
-    if not isinstance(cfg.get("exclude"), list):
-        cfg["exclude"] = []
+    for key in ("exclude", "hideBooks"):
+        if not isinstance(cfg.get(key), list):
+            cfg[key] = []
     return cfg
 
 
@@ -168,9 +170,26 @@ def _strip_trailing_group(t):
     return t
 
 
+# Imported books often carry download-site tags, file extensions or numeric upload ids in their title.
+_SOURCE_TAG = re.compile(r"lib|z-?lib|libgen|anna|archive|www\.|\.(com|org|net|sk|io|cn)\b|epub|mobi|azw|pdf", re.I)
+_FILE_EXT = re.compile(r"\.(epub|mobi|azw3?|pdf|txt)$", re.I)
+_UPLOAD_ID = re.compile(r"^\d{6,}[-_ ]+")
+
+
+def display_title(title):
+    """Title as shown to people: imported-file noise removed, everything else kept verbatim."""
+    t = _UPLOAD_ID.sub("", _FILE_EXT.sub("", (title or "").strip()))
+    while True:
+        stripped = _strip_trailing_group(t)
+        if stripped == t or not _SOURCE_TAG.search(t[len(stripped):]):
+            break
+        t = stripped
+    return t.strip() or (title or "").strip()
+
+
 def clean_title(title):
     """File-name stem for a book: drop subtitle and bracketed edition notes, then forbidden characters."""
-    t = (title or "").strip()
+    t = display_title(title)
     prev = None
     while prev != t:
         prev = t

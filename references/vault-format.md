@@ -154,12 +154,14 @@ frontmatter：
   "title": "书房",
   "theme": "舆图",
   "topN": 50,
-  "exclude": []
+  "exclude": [],
+  "hideBooks": []
 }
 ```
 
 - `theme` 取 `舆图`、`羊皮纸`、`星空` 三者之一。
 - `exclude` 是不想出现在书房页上的文字片段。任何想法或划线只要包含其中一段，渲染时就会被跳过。库里的笔记不受影响。
+- `hideBooks` 是整本不上书房页的书，写书的文件名。
 
 ## `.atlas/books.json`
 

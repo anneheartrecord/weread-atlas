@@ -257,3 +257,14 @@ class TestFrontmatterReading(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestHideBooks(RenderCase):
+    def test_hidden_book_is_left_off_the_page(self):
+        cfg_path = self.root / ".atlas" / "config.json"
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+        cfg["hideBooks"] = ["第七个冬天"]
+        cfg_path.write_text(json.dumps(cfg, ensure_ascii=False), encoding="utf-8")
+        html, _ = self.render()
+        data, raw = page_data(html)
+        self.assertNotIn("第七个冬天", [b["title"] for b in data["books"]])

@@ -232,3 +232,13 @@ class BookBlock(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DisplayTitleTest(unittest.TestCase):
+    def test_strips_download_tags_and_upload_ids(self):
+        from atlas_lib import display_title, clean_title
+        self.assertEqual(display_title("时间游戏 (周洛华) (z-library.sk, 1lib.sk, z-lib.sk)"), "时间游戏 (周洛华)")
+        self.assertEqual(display_title("941469439-时间游戏-周洛华"), "时间游戏-周洛华")
+        self.assertEqual(display_title("原则.epub"), "原则")
+        self.assertEqual(display_title("人类简史（中信版）"), "人类简史（中信版）")
+        self.assertEqual(clean_title("时间游戏 (周洛华) (z-library.sk, 1lib.sk, z-lib.sk)"), "时间游戏")

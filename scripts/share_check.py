@@ -43,7 +43,20 @@ FINANCE_WORDS = [
     "存款", "储蓄", "积蓄", "存了", "攒了", "余额", "净资产", "身家",
     "负债", "房贷", "车贷", "贷款", "信用卡", "欠款",
     "持仓", "仓位", "加仓", "减仓", "清仓", "建仓", "割肉", "浮亏", "浮盈", "期权", "股票账户",
+    "买入", "卖出", "抄底", "职级", "年包",
 ]
+
+# Age and body numbers: "今年刚好21", "25-26岁", "胖了 8.7KG", "瘦身 50 斤".
+AGE_BODY_PATTERNS = [
+    r"\d{2}\s*(岁|周岁)",
+    r"今年\s*(刚好|才|已经)?\s*\d{2}",
+    r"\d+(\.\d+)?\s*(kg|KG|Kg|公斤|斤)(?![A-Za-z])",
+]
+
+# Books that look like the user's own uploads rather than published books:
+# imported (bookId CB_…) with a tool or blank author, or a file-like title with a date or locale tag.
+UPLOAD_AUTHORS = ["python-docx", "docx", "microsoft", "administrator", "wps", "word", "unknown", "未知"]
+UPLOAD_TITLE_PATTERNS = [r"20\d{2}[-_.]?\d{2}[-_.]?\d{2}", r"\.(zh|en)-[A-Za-z]{2}", r"_\d{6,}"]
 
 # Phone numbers, e-mail addresses, ID cards and other long digit strings.
 CONTACT_PATTERNS = [
@@ -82,6 +95,7 @@ THOUGHT_CHECKS = [
     ("家人与伴侣", FAMILY_WORDS, False),
     ("工作单位与同事", WORK_WORDS, False),
     ("健康", HEALTH_WORDS, False),
+    ("年龄与身体数字", AGE_BODY_PATTERNS, True),
     ("带数字的个人经历", [FIRST_PERSON_NUMBER], True),
 ]
 HIGHLIGHT_CHECKS = [("联系方式或证件号", CONTACT_PATTERNS, True)]
@@ -98,6 +112,24 @@ def flags(text, checks):
         elif any(w in text for w in items):
             hits.append(label)
     return hits
+
+
+def own_uploads(books, hidden):
+    """Books on the page that look like the user's own files; their titles and links would be public."""
+    out = []
+    for b in books:
+        if b["fileName"] in hidden or not str(b.get("bookId", "")).startswith("CB_"):
+            continue
+        author = (b.get("author") or "").strip().lower()
+        title = b.get("title") or ""
+        reasons = []
+        if not author or any(w in author for w in UPLOAD_AUTHORS):
+            reasons.append("作者显示为 %s" % (b.get("author") or "空"))
+        if any(re.search(p, title) for p in UPLOAD_TITLE_PATTERNS):
+            reasons.append("书名像文件名")
+        if reasons:
+            out.append({"book": title or b["fileName"], "fileName": b["fileName"], "reasons": reasons})
+    return out
 
 
 def published_items(books, exclude):
@@ -127,10 +159,23 @@ def find(books, exclude):
     return found, counts
 
 
-def run(paths, exclude_numbers=None, log=print):
-    books = lib.load_books(paths)
+def run(paths, exclude_numbers=None, hide_numbers=None, log=print):
     cfg = lib.load_config(paths.root)
+    hidden = set(cfg.get("hideBooks") or [])
+    books = [b for b in lib.load_books(paths) if b["fileName"] not in hidden]
     found, counts = find(books, cfg.get("exclude") or [])
+    uploads = own_uploads(books, hidden)
+    if hide_numbers:
+        bad = [n for n in hide_numbers if not 1 <= n <= len(uploads)]
+        if bad:
+            log("书的编号超出范围（1–%d）：%s。先不带参数运行，看清编号再选。" % (len(uploads), ", ".join(map(str, bad))))
+            return 1
+        for n in hide_numbers:
+            cfg["hideBooks"].append(uploads[n - 1]["fileName"])
+        lib.save_config(paths.root, cfg)
+        log("已把 %d 本书加入 hideBooks，书房页重新渲染后整本不再显示。库里的笔记没有改动。" % len(hide_numbers))
+        if not exclude_numbers:
+            return 0
     if exclude_numbers:
         bad = [n for n in exclude_numbers if not 1 <= n <= len(found)]
         if bad:
@@ -152,6 +197,14 @@ def run(paths, exclude_numbers=None, log=print):
         log("[%d] 《%s》%s · %s：%s" % (i, f["book"], f["kind"], "、".join(f["flags"]), text))
     if found:
         log("要隐藏哪几条，运行：share_check.py --root <根目录> --exclude 编号,编号")
+    if uploads:
+        log("")
+        log("另有 %d 本书看起来是自己上传的文件，书名会公开，阅读链接别人也打不开：" % len(uploads))
+        for i, u in enumerate(uploads, 1):
+            log("[书%d] 《%s》：%s" % (i, u["book"], "，".join(u["reasons"])))
+        log("要整本隐藏，运行：share_check.py --root <根目录> --hide-books 编号,编号")
+    log("")
+    log("部署时只上传 书房/index.html 这一个文件。.atlas/ 里有全部笔记原文和账号缓存，书/ 是笔记本身，都不要公开。")
     return 0
 
 
@@ -166,8 +219,9 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="分享书房页前，列出看起来涉及个人信息的想法和划线。")
     ap.add_argument("--root", required=True, help="Obsidian 库里的 微信读书 根目录")
     ap.add_argument("--exclude", type=_numbers, help="把这些编号的原文加入配置的 exclude，例如 3,7,12")
+    ap.add_argument("--hide-books", type=_numbers, help="把列表里这些编号的书整本从书房页隐藏，例如 1,2")
     args = ap.parse_args(argv)
-    return run(lib.Paths(args.root), exclude_numbers=args.exclude)
+    return run(lib.Paths(args.root), exclude_numbers=args.exclude, hide_numbers=args.hide_books)
 
 
 if __name__ == "__main__":

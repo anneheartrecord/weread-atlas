@@ -378,6 +378,7 @@ def read_vault(root: Path) -> Dict[str, Any]:
         warnings.append(f".atlas/config.json 读不出来，按默认配置渲染（{type(e).__name__}）")
         config = json.loads(json.dumps(atlas_lib.DEFAULT_CONFIG))
     config["exclude"] = [str(x) for x in as_list(config.get("exclude")) if str(x)]
+    config["hideBooks"] = [str(x) for x in as_list(config.get("hideBooks")) if str(x)]
 
     stats = _read_json(where["stats_json"], warnings, ".atlas/stats.json")
     if stats is not None and not isinstance(stats, dict):

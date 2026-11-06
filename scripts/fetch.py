@@ -269,7 +269,7 @@ def normalise_book(raw, hours_sec):
 
     return {
         "bookId": str(nb.get("bookId") or info.get("bookId")),
-        "title": info.get("title") or nbook.get("title") or "",
+        "title": lib.display_title(info.get("title") or nbook.get("title") or ""),
         "fileName": None,
         "author": info.get("author") or nbook.get("author") or "",
         "category": category,
