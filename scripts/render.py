@@ -1,11 +1,16 @@
 """Render the 书房 page from the vault.
 
-    python3 scripts/render.py --root <微信读书> [--theme 舆图|羊皮纸|星空] [--out path]
+    python3 scripts/render.py --root <微信读书> [--out path]
 
 Reads only the vault (see vault_read.py) and writes one self-contained
 HTML file, `书房/index.html` by default: inline CSS, inline JS and the
 data inlined as JSON. The only outside requests the page makes are the
-font stylesheet and the book covers.
+font stylesheets and the book covers. The page follows the system's
+light or dark preference; there are no themes to pick.
+
+The knowledge ring is laid out here rather than in the browser, so its
+geometry can be tested: domains are arcs of one circle, topics are dots on
+it, and relations between topics are curves across the inside.
 """
 
 from __future__ import annotations
@@ -13,6 +18,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -22,8 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from vault_read import read_vault  # noqa: E402
 
 TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
-THEMES = {"舆图": "yutu", "羊皮纸": "kami", "星空": "stars"}
-DEFAULT_THEME = "舆图"
+DEFAULT_TITLE = "书脉"
 MAX_HIGHLIGHTS = 10
 MAX_THOUGHTS = 5
 
@@ -228,19 +233,192 @@ def build_page_data(vault: Dict[str, Any]) -> Dict[str, Any]:
             ],
         })
 
+    relations = build_relations(page_topics, [t.get("related") or [] for t in topics], page_books)
     stats = clean_stats(vault["stats"])
     return {
-        "title": str(vault["config"].get("title") or "书房"),
+        "title": str(vault["config"].get("title") or DEFAULT_TITLE),
         "generatedAt": (stats or {}).get("generatedAt", ""),
         "stats": stats,
         "domains": vault["domains"],
         "topics": page_topics,
         "books": page_books,
+        "relations": relations,
+        "ring": ring_layout(page_topics, vault["domains"], relations),
     }
 
 
 def _ref_or_none(name: str, ref) -> Dict[str, Any]:
     return {"title": name, "idx": ref(name) if name else None}
+
+
+# ---------------------------------------------------------------- relations
+
+
+def build_relations(topics: List[Dict[str, Any]], related: List[List[Dict[str, str]]],
+                    books: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Relations between topics, undirected, by page-topic index.
+
+    Two sources: the cards' own 相关主题 (kind "concept", with the card's
+    reason), and pairs of topics that share two or more books (kind "books").
+    A concept pair that also shares books carries the count and titles. Cross
+    domain relations come first, then concept before books, then most shared.
+    """
+    index = {t["name"]: i for i, t in enumerate(topics)}
+    rels: Dict[Any, Dict[str, Any]] = {}
+    for i, items in enumerate(related):
+        for r in items:
+            j = index.get(r.get("topic"))
+            if j is None or j == i:
+                continue
+            key = (min(i, j), max(i, j))
+            if key not in rels:
+                rels[key] = {"a": key[0], "b": key[1], "why": str(r.get("why") or ""), "kind": "concept"}
+    for a in range(len(topics)):
+        for b in range(a + 1, len(topics)):
+            shared = [k for k in topics[a]["books"] if k in topics[b]["books"]]
+            if not shared:
+                continue
+            names = "、".join("《%s》" % books[k]["title"] for k in shared[:2]) + ("等" if len(shared) > 2 else "")
+            if (a, b) in rels:
+                rels[(a, b)].update(shared=len(shared), sharedBooks=names)
+            elif len(shared) >= 2:
+                rels[(a, b)] = {"a": a, "b": b, "why": "共读 %d 本书：%s" % (len(shared), names),
+                                "kind": "books", "shared": len(shared), "sharedBooks": names}
+    out = list(rels.values())
+    for r in out:
+        r["cross"] = topics[r["a"]]["domain"] != topics[r["b"]]["domain"]
+        r.setdefault("shared", 0)
+    out.sort(key=lambda r: (not r["cross"], r["kind"] != "concept", -r["shared"]))
+    return out
+
+
+# --------------------------------------------------------------------- ring
+
+RING_GAP = 0.2  # radians left empty between two domains
+RING_MAX_R = 210
+RING_MIN_R = 150
+RING_MIN_SIZE = 600
+RING_MARGIN = 12
+LABEL_CHARS = 14
+
+
+def measure(text: str, px: float) -> float:
+    """Rough text width: CJK and full-width glyphs are 1em, the rest about 0.58em."""
+    w = 0.0
+    for ch in text:
+        c = ord(ch)
+        w += 1 if c > 0x2E7F else 0.68 if 65 <= c <= 90 else 0.56
+    return w * px
+
+
+def ring_label(name: str) -> str:
+    return name if len(name) <= LABEL_CHARS else name[: LABEL_CHARS - 1] + "…"
+
+
+def _f1(v: float) -> float:
+    return round(v, 1)
+
+
+def _boxes_overlap(a, b, pad: float = 2) -> bool:
+    return a[0] < b[2] + pad and b[0] < a[2] + pad and a[1] < b[3] + pad and b[1] < a[3] + pad
+
+
+def ring_layout(topics: List[Dict[str, Any]], domains: List[Dict[str, Any]],
+                relations: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Geometry of the knowledge ring, in the coordinates of a square viewBox.
+
+    Label size shrinks a little as topics get more numerous (13px at about 30);
+    the radius is whatever leaves room for the longest radial label, and when
+    the topics are too many for that radius the whole viewBox grows instead, so
+    neighbouring labels never collide. Returns None when there are no topics.
+    """
+    n = len(topics)
+    if not n:
+        return None
+    names = [d["name"] for d in domains if any(t["domain"] == d["name"] for t in topics)]
+    for t in topics:
+        if t["domain"] not in names:
+            names.append(t["domain"])
+    m = len(names)
+    label_px = max(11.0, min(15.0, 13 + (31 - n) * 0.1))
+    scale = label_px / 13
+    max_hours = max([t["hours"] for t in topics] + [1])
+    dots = [(3.2 + 6 * math.sqrt(max(t["hours"], 0) / max_hours)) * scale for t in topics]
+    labels = [ring_label(t["name"]) for t in topics]
+    room = RING_MARGIN + max(dots) + 8 + max(measure(s, label_px) for s in labels)
+    gap = RING_GAP
+    step = (2 * math.pi - gap * m) / n
+    r = max(min(RING_MAX_R, 380 - room), RING_MIN_R, 1.3 * label_px / step)
+    size = max(RING_MIN_SIZE, math.ceil(2 * (r + room)))
+    c = size / 2
+
+    angles = [0.0] * n
+    arcs = []
+    ang = -math.pi / 2 + gap / 2
+    for d in names:
+        members = sorted((i for i, t in enumerate(topics) if t["domain"] == d), key=lambda i: -topics[i]["hours"])
+        a0 = ang
+        for i in members:
+            angles[i] = ang + step / 2
+            ang += step
+        arcs.append({"name": d, "a0": a0, "a1": ang})
+        ang += gap
+
+    def point(a: float, rad: float):
+        return c + rad * math.cos(a), c + rad * math.sin(a)
+
+    def arc_path(a0: float, a1: float) -> str:
+        x0, y0 = point(a0, r)
+        x1, y1 = point(a1, r)
+        return "M%.1f,%.1fA%.1f,%.1f 0 %d 1 %.1f,%.1f" % (x0, y0, r, r, 1 if a1 - a0 > math.pi else 0, x1, y1)
+
+    # Domain names sit inside the ring at the middle of their arc. When they
+    # crowd each other, shrink them, then put every other one further in.
+    def domain_boxes(px: float, radii):
+        out = []
+        for g, rad in zip(arcs, radii):
+            x, y = point((g["a0"] + g["a1"]) / 2, rad)
+            w = measure(g["name"], px) * 1.14 + 4  # letter-spacing 0.14em
+            out.append((x - w / 2, y - px * 0.7, x + w / 2, y + px * 0.7, x, y))
+        return out
+
+    def crowded(boxes) -> bool:
+        return any(_boxes_overlap(boxes[i], boxes[j]) for i in range(len(boxes)) for j in range(i + 1, len(boxes)))
+
+    domain_px, boxes = 15.0, []
+    for px, radii in [(15.0, [0.66] * m), (13.0, [0.66] * m), (12.0, [0.66] * m), (12.0, [0.7, 0.42] * m), (11.0, [0.72, 0.4] * m)]:
+        domain_px, boxes = px, domain_boxes(px, [k * r for k in radii[:m]])
+        if not crowded(boxes):
+            break
+    for g, b in zip(arcs, boxes):
+        g["x"], g["y"] = _f1(b[4]), _f1(b[5])
+        g["d"] = arc_path(g.pop("a0"), g.pop("a1"))
+
+    nodes = []
+    for i, t in enumerate(topics):
+        a = angles[i]
+        x, y = point(a, r)
+        right = math.cos(a) >= -1e-9
+        lx, ly = point(a, r + dots[i] + 8)
+        deg = math.degrees(a)
+        nodes.append({"x": _f1(x), "y": _f1(y), "a": round(a, 4), "dot": _f1(dots[i]), "label": labels[i],
+                      "lx": _f1(lx), "ly": _f1(ly), "rot": _f1(deg if right else deg + 180),
+                      "anchor": "start" if right else "end"})
+
+    roads = []
+    for rel in relations:
+        p, q = nodes[rel["a"]], nodes[rel["b"]]
+        d = abs(angles[rel["a"]] - angles[rel["b"]])
+        if d > math.pi:
+            d = 2 * math.pi - d
+        # Neighbours bow gently near the rim; distant topics pass close to the centre.
+        k = 0.82 * (1 - d / math.pi)
+        mx, my = c + ((p["x"] + q["x"]) / 2 - c) * k, c + ((p["y"] + q["y"]) / 2 - c) * k
+        roads.append({"d": "M%.1f,%.1fQ%.1f,%.1f %.1f,%.1f" % (p["x"], p["y"], mx, my, q["x"], q["y"]),
+                      "w": round((1.3 if rel["kind"] == "concept" else 0.9) + min(rel["shared"], 4) * 0.3, 2)})
+
+    return {"size": size, "r": _f1(r), "labelPx": round(label_px, 1), "domainPx": domain_px,
+            "arcs": arcs, "nodes": nodes, "roads": roads}
 
 
 # --------------------------------------------------------------------- html
@@ -258,14 +436,12 @@ def inline_json(data: Any) -> str:
     )
 
 
-def render_html(data: Dict[str, Any], theme: str) -> str:
+def render_html(data: Dict[str, Any]) -> str:
     page = (TEMPLATES / "page.html").read_text(encoding="utf-8")
     css = (TEMPLATES / "page.css").read_text(encoding="utf-8")
     js = (TEMPLATES / "page.js").read_text(encoding="utf-8")
     parts = {
         "@@ATLAS_TITLE@@": html.escape(data["title"]),
-        "@@ATLAS_THEME@@": THEMES[theme],
-        "@@ATLAS_SCHEME@@": "dark" if theme == "星空" else "light dark",
         "/*@@ATLAS_CSS@@*/": css,
         "/*@@ATLAS_JS@@*/": js.replace("</script", "<\\/script"),
         "@@ATLAS_DATA@@": inline_json(data),
@@ -278,7 +454,6 @@ def render_html(data: Dict[str, Any], theme: str) -> str:
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description="从库里渲染书房页")
     ap.add_argument("--root", required=True, help="微信读书 根目录")
-    ap.add_argument("--theme", choices=list(THEMES), help="风格，默认取 config.json 的 theme")
     ap.add_argument("--out", help="输出路径，默认 <root>/书房/index.html")
     args = ap.parse_args(argv)
 
@@ -289,21 +464,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"错误：{e}", file=sys.stderr)
         return 2
     warnings = vault["warnings"]
-    theme = args.theme or str(vault["config"].get("theme") or DEFAULT_THEME)
-    if theme not in THEMES:
-        warnings.append(f"config.json 的 theme「{theme}」不认识，改用{DEFAULT_THEME}")
-        theme = DEFAULT_THEME
 
     data = build_page_data(vault)
     out = Path(args.out).expanduser() if args.out else root / "书房" / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
-    text = render_html(data, theme)
+    text = render_html(data)
     out.write_text(text, encoding="utf-8")
 
     size_kb = len(text.encode("utf-8")) / 1024
     mapped = sum(1 for d in data["domains"] if d["topics"] > 0)
     print(f"书房页：{out}")
-    print(f"风格 {theme}｜书 {len(data['books'])} 本｜主题 {len(data['topics'])} 个｜领域 {mapped} 个｜{size_kb:.0f} KB")
+    cross = sum(1 for r in data["relations"] if r["cross"])
+    print(f"书 {len(data['books'])} 本｜主题 {len(data['topics'])} 个｜领域 {mapped} 个｜"
+          f"主题关系 {len(data['relations'])} 条，其中跨领域 {cross} 条｜{size_kb:.0f} KB")
     if warnings:
         print(f"警告 {len(warnings)} 条：")
         for w in warnings:

@@ -6,7 +6,8 @@ Validation lists every problem and writes nothing when there is any.
 
 Writes:
   主题/<name>.md     one card per topic; my thoughts and representative highlights
-                     are picked by bigram overlap with the topic's own text
+                     are picked by bigram overlap with the topic's own text; related
+                     topics are undirected, so a relation shows on both cards
   书/<file>.md       领域 / 主题 frontmatter and the topic line at the top of the block
   总览.md            reading summary plus every domain with its topics
 """
@@ -24,6 +25,7 @@ from digest import all_thoughts, highlight_score  # noqa: E402
 from notes import write_book_note  # noqa: E402
 
 MAX_ONELINER = 40
+MAX_WHY = 26
 MIN_VIEWPOINTS, MAX_VIEWPOINTS = 2, 8
 MAX_THOUGHTS, THOUGHTS_PER_BOOK, THOUGHT_FLOOR = 3, 1, 0.3
 MAX_HIGHLIGHTS, HIGHLIGHTS_PER_BOOK = 10, 2
@@ -76,6 +78,7 @@ def validate(data, books):
     if not isinstance(topics, list) or not topics:
         errors.append("topics 必须是非空列表")
         topics = []
+    names = {t.get("name") for t in topics if isinstance(t, dict) and _is_text(t.get("name"))}
     seen = {}
     for i, t in enumerate(topics, 1):
         if not isinstance(t, dict):
@@ -123,6 +126,7 @@ def validate(data, books):
                 for b in vb:
                     if resolve(b) is None:
                         warnings.append("%s的观点来源不在书架上，会写成《%s》%s" % (label, b, _suggest(b, books)))
+        _check_related(t, label, names, errors, warnings)
 
     assign = data.get("assign", {})
     if not isinstance(assign, dict):
@@ -134,6 +138,61 @@ def validate(data, books):
             if d not in domains:
                 errors.append("assign 里「%s」的领域「%s」不在 domains 里" % (b, d))
     return errors, warnings
+
+
+def _check_related(t, label, names, errors, warnings):
+    rel = t.get("related")
+    if rel is None:
+        warnings.append("%s没有 related，书房页上它不会和其他主题连线" % label)
+        return
+    if not isinstance(rel, list):
+        errors.append("%s的 related 必须是列表" % label)
+        return
+    for j, r in enumerate(rel, 1):
+        if not isinstance(r, dict):
+            errors.append("%s的第 %d 条 related 不是对象" % (label, j))
+            continue
+        other, why = r.get("topic"), r.get("why")
+        if not _is_text(other):
+            errors.append("%s的第 %d 条 related 缺少 topic" % (label, j))
+        elif other == t.get("name"):
+            errors.append("%s的 related 指向了自己" % label)
+        elif other not in names:
+            hits = difflib.get_close_matches(other, sorted(names), n=1, cutoff=0.5)
+            errors.append("%s的 related 主题找不到：%s%s" % (label, other, "，是不是「%s」？" % hits[0] if hits else ""))
+        if not _is_text(why):
+            errors.append("%s的第 %d 条 related 缺少 why" % (label, j))
+        elif len(why.strip()) > MAX_WHY:
+            errors.append("%s和「%s」的 why 有 %d 个字，超过 %d 个字" % (label, other, len(why.strip()), MAX_WHY))
+
+
+def relations(topics, log=None):
+    """Undirected relations from every topic's `related`, de-duplicated.
+
+    Returns {name: [(other, why), ...]} so each card lists every relation it
+    takes part in: the ones it declares, in order, then the ones declared on it.
+    When both sides declare the pair, the first declaration's why wins.
+    """
+    pairs = {}
+    order = []
+    for t in topics:
+        for r in t.get("related") or []:
+            a, b, why = t["name"], r["topic"], r["why"].strip()
+            key = tuple(sorted((a, b)))
+            if key in pairs:
+                if pairs[key][2] != why and log:
+                    log("提醒：主题「%s」和「%s」两边都写了 related，用先写的理由：%s" % (key[0], key[1], pairs[key][2]))
+                continue
+            pairs[key] = (a, b, why)
+            order.append(key)
+    out = {t["name"]: [] for t in topics}
+    for key in order:
+        a, b, why = pairs[key]
+        out[a].append((b, why))
+    for key in order:
+        a, b, why = pairs[key]
+        out[b].append((a, why))
+    return out
 
 
 # ---------------------------------------------------------------- relevance picking
@@ -195,7 +254,7 @@ def source_links(names, resolve):
     return " · ".join(out)
 
 
-def render_card(topic, thoughts, highlights, resolve):
+def render_card(topic, thoughts, highlights, resolve, related=()):
     parts = ["## 一句话结论\n\n" + lib.md_text(topic["oneLiner"])]
     lines = ["## 核心观点", ""]
     for i, v in enumerate(topic["viewpoints"], 1):
@@ -217,6 +276,11 @@ def render_card(topic, thoughts, highlights, resolve):
     for _, _, fname, text in highlights:
         lines.append("- %s —— %s" % (lib.md_text(text), lib.wikilink(fname)))
     parts.append("\n".join(lines).rstrip())
+    if related:
+        lines = ["## 相关主题", ""]
+        for other, why in related:
+            lines.append("- %s：%s" % (lib.wikilink(other), lib.md_text(why)))
+        parts.append("\n".join(lines))
     return "\n\n".join(parts)
 
 
@@ -290,6 +354,7 @@ def run(paths, check_only=False, log=print):
             book_domains[f] = {d}
     book_domains = {f: [d for d in domains if d in ds] for f, ds in book_domains.items()}
 
+    related = relations(topics, log=log)
     cards = {"created": 0, "updated": 0, "unchanged": 0}
     for t in topics:
         tb = topic_books[t["name"]]
@@ -302,7 +367,7 @@ def run(paths, check_only=False, log=print):
         }
         path = paths.topic_card(t["name"])
         existing = lib.read_text(path)
-        text = lib.merge_note(existing, render_card(t, thoughts, highlights, resolve), fields)
+        text = lib.merge_note(existing, render_card(t, thoughts, highlights, resolve, related[t["name"]]), fields)
         changed = lib.write_text_if_changed(path, text)
         cards["created" if existing is None else ("updated" if changed else "unchanged")] += 1
 
@@ -315,7 +380,8 @@ def run(paths, check_only=False, log=print):
     overview = render_overview(stats, books, domains, topics, topic_books, book_domains)
     lib.write_text_if_changed(paths.overview, lib.merge_note(lib.read_text(paths.overview), overview, {}))
 
-    log("主题卡片 %d 张：新建 %d，更新 %d，未变化 %d" % (len(topics), cards["created"], cards["updated"], cards["unchanged"]))
+    log("主题卡片 %d 张：新建 %d，更新 %d，未变化 %d；主题之间的关系 %d 条"
+        % (len(topics), cards["created"], cards["updated"], cards["unchanged"], sum(len(v) for v in related.values()) // 2))
     log("书的笔记 %d 篇：新建 %d，更新 %d，未变化 %d；归入主题 %d 本，分到领域 %d 本"
         % (len(books), notes["created"], notes["updated"], notes["unchanged"], len(book_topics),
            sum(1 for v in book_domains.values() if v)))

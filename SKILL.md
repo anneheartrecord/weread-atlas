@@ -1,6 +1,6 @@
 ---
 name: weread-atlas
-description: 书脉：把微信读书的划线和想法画成 Obsidian 里的知识地图。每本书一篇笔记，跨书归纳成主题卡片，再生成一个带舆图的本地书房网页。Use when the user wants their WeRead/微信读书 notes organised by topic in Obsidian, a knowledge map of what they have read, a 书房/reading-room page, or to refresh, re-theme or share one they already built. Triggers：「把微信读书笔记整理进 Obsidian」「按主题整理我的读书笔记」「画一张我的知识地图」「生成书房页」「更新书脉」「书房换个风格」「书房页要分享出去，先检查一下」. Needs the official weread-skills skill and WEREAD_API_KEY. Skip it for single-book lookups, store search, recommendations or reading-stat questions (call weread-skills directly), for exporting to Notion or other apps, and for turning a book into a post.
+description: 书脉：把微信读书的划线和想法画成 Obsidian 里的知识地图。每本书一篇笔记，跨书归纳成主题卡片并写明主题之间为什么相连，再生成一个带知识环和书架的本地网页。Use when the user wants their WeRead/微信读书 notes organised by topic in Obsidian, a map of how the books they read connect, a reading-room page, or to refresh or share one they already built. Triggers：「把微信读书笔记整理进 Obsidian」「按主题整理我的读书笔记」「画一张我的知识地图」「看看我读的书之间有什么联系」「生成书房页」「更新书脉」「书房页要分享出去，先检查一下」. Needs the official weread-skills skill and WEREAD_API_KEY. Skip it for single-book lookups, store search, recommendations or reading-stat questions (call weread-skills directly), for exporting to Notion or other apps, and for turning a book into a post.
 metadata:
   version: "0.1.0"
 ---
@@ -11,7 +11,7 @@ metadata:
 
 - `书/` 下每本书一篇笔记。
 - `主题/` 下每个主题一张卡片，卡片上的每条观点都链回出处。
-- `书房/index.html` 是一个本地网页，包含阅读统计、知识地图、主题卡片和书架。
+- `书房/index.html` 是一个本地网页：顶部是阅读总账，中间是知识环，领域是环上的弧，主题是弧上的点，主题之间的关系画成环内的连线，跨领域的脉络单独列在一旁；下面是阅读节奏和书架。页面跟随系统的浅色或深色设置。
 
 核心承诺是**知识按主题存放，而不是按书存放**。同步笔记只是手段。
 
@@ -35,7 +35,7 @@ metadata:
 
 3. **出摘要**：`python3 scripts/digest.py --root ROOT --top 50`。先只取笔记最多的 50 本，让用户在半小时内看到一张像样的地图。用户要全部的书时，也先用这 50 本走完第 4、5 步，再按增量更新一节分批补进剩下的书，每批读完一轮 `--new` 的摘要，直到它报告没有新书。一次读几百本的摘要会撑满上下文，读到后面就开始漏。
 
-4. **归纳主题**：先读 [`references/topics-guide.md`](references/topics-guide.md)，再逐个读完 `.atlas/digest/` 下的全部摘要文件，一个都不跳。然后按指南提出领域和主题的方案，整份列给用户确认一次。用户确认后写 `.atlas/topics.json`。完成标准是用户点头，并且摘要里的每一本书都出现在某个主题的 `books` 里，或者出现在 `assign` 里。
+4. **归纳主题**：先读 [`references/topics-guide.md`](references/topics-guide.md)，再逐个读完 `.atlas/digest/` 下的全部摘要文件，一个都不跳。然后按指南提出领域和主题的方案，连同主题之间的关系，整份列给用户确认一次。用户确认后写 `.atlas/topics.json`，每个主题带 2 到 5 条 `related`，`why` 说出连接两者的那个想法。完成标准是用户点头，摘要里的每一本书都出现在某个主题的 `books` 里或者 `assign` 里，并且每个主题都有 `related`。
 
 5. **写主题卡片**：`python3 scripts/topics.py --root ROOT`。校验报错时按提示改 `topics.json` 再跑，直到通过。
 
@@ -51,17 +51,13 @@ metadata:
 
 2. `python3 scripts/digest.py --root ROOT --new`，读完列出的摘要。
 
-3. 把新书归进已有主题，必要时补充或改写观点，然后改 `topics.json`。需要新建主题或新建领域时，先问用户。`--new` 一次列出的摘要超过 4 个文件时，读完前 4 个就先写 `topics.json` 并运行 `topics.py`，再重新运行 `--new` 处理剩下的。
+3. 把新书归进已有主题，必要时补充或改写观点，然后改 `topics.json`。需要新建主题或新建领域时，先问用户；新主题也要写 `related`。`--new` 一次列出的摘要超过 4 个文件时，读完前 4 个就先写 `topics.json` 并运行 `topics.py`，再重新运行 `--new` 处理剩下的。
 
 4. 依次运行 `topics.py`、`render.py`，再按验收清单检查。
 
-## 只换风格或重新渲染
+## 只重新渲染
 
-运行 `python3 scripts/render.py --root ROOT --theme 舆图|羊皮纸|星空`。要让风格长期生效，就改 `.atlas/config.json` 里的 `theme`。
-
-- 舆图：默认风格，古地图，领域是岛屿，主题是城池。
-- 羊皮纸：素雅的星图。
-- 星空：深色夜空，主题是星星，最适合截图分享。
+运行 `python3 scripts/render.py --root ROOT`。书房页只有一种样式，浅色和深色跟随系统设置，没有风格可选；用户要换风格时如实说明。旧配置里的 `theme` 字段会被忽略。页面标题改 `.atlas/config.json` 的 `title`。
 
 ## 分享前检查
 
@@ -83,11 +79,13 @@ metadata:
 
 - `topics.py` 打印的主题数和领域数，与用户确认的方案一致。
 
-- 随便打开两张主题卡片：一句话结论是一个可以被反驳的判断，核心观点都标了出处。
+- 随便打开两张主题卡片：一句话结论是一个可以被反驳的判断，核心观点都标了出处，末尾的相关主题一节有 2 到 5 条，理由说的是想法而不是“两者相关”。
+
+- `topics.py` 没有打印“没有 related”的提醒，也就是每个主题都有关系。
 
 - 抽查一篇书的笔记：frontmatter 里有领域和主题，正文顶部的主题行能点到对应卡片。
 
-- `render.py` 打印的书数和主题数与上面一致，没有警告；有警告时逐条说明原因。
+- `render.py` 打印的书数和主题数与上面一致，没有警告；有警告时逐条说明原因。它打印的跨领域关系不是 0 条，打开页面时知识环旁边的脉络栏列着这些跨领域关系和理由；只有一个领域时，脉络栏改列同领域的关系。
 
 汇报时告诉用户四件事：书房页的路径、领域和主题的清单、每本书的时长只是下限，以及在 Obsidian 里打开关系图谱就能看到书和主题连成的网。
 
@@ -110,8 +108,7 @@ metadata:
 | 项 | 默认 | 改法 |
 |---|---|---|
 | 根目录名 | `微信读书` | config 的 `rootName` |
-| 页面标题 | `书房` | config 的 `title` |
-| 风格 | 舆图 | config 的 `theme` 或 `--theme` |
+| 页面标题 | `书脉` | config 的 `title` |
 | 首次归纳的书数 | 50 | config 的 `topN` 或 `--top` |
 | 页面上每本书的划线 | 最多 10 条 | 固定 |
 | 主题卡片上的想法和划线 | 最多 3 条和 10 条 | 固定 |

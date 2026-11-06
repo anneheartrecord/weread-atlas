@@ -313,7 +313,19 @@ def parse_topic_block(block: str) -> Dict[str, Any]:
             text, src = split_source(m.group(1))
             highlights.append({"text": text, "book": src[0]["title"] if src else ""})
 
-    return {"oneLiner": one, "viewpoints": viewpoints, "thoughts": thoughts, "highlights": highlights}
+    related: List[Dict[str, str]] = []
+    for line in _section(secs, "相关主题"):
+        m = re.match(r"^\s*[-*]\s+(.*)$", line)
+        if not m:
+            continue
+        link = _LINK.match(m.group(1).strip())
+        if not link:
+            continue
+        rest = m.group(1).strip()[link.end() :]
+        why = re.sub(r"^\s*(?:[：:]|——|—|-)\s*", "", rest).strip()
+        related.append({"topic": link.group(1).strip(), "why": why})
+
+    return {"oneLiner": one, "viewpoints": viewpoints, "thoughts": thoughts, "highlights": highlights, "related": related}
 
 
 def read_topic(path: Path, warnings: List[str]) -> Optional[Dict[str, Any]]:
@@ -427,8 +439,16 @@ def read_vault(root: Path) -> Dict[str, Any]:
         if not t["hours"]:
             t["hours"] = round(sum(by_file[f]["hours"] for f in found), 1)
 
-    # A book's topics: its own 主题 field plus every card that lists it.
+    # Related topics point at other cards; a link to a card that is not there is dropped.
     topic_by_name = {t["name"]: t for t in topics}
+    for t in topics:
+        kept = [r for r in t["related"] if r["topic"] in topic_by_name and r["topic"] != t["name"]]
+        lost = [r["topic"] for r in t["related"] if r["topic"] not in topic_by_name]
+        if lost:
+            warnings.append(f"主题「{t['name']}」的相关主题没有对应卡片，已忽略：{'、'.join(lost[:3])}")
+        t["related"] = kept
+
+    # A book's topics: its own 主题 field plus every card that lists it.
     for b in books:
         names = [n for n in b["topics"] if n in topic_by_name]
         for t in topics:

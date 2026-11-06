@@ -17,13 +17,11 @@ END = "<!-- weread-atlas:end -->"
 
 DEFAULT_CONFIG = {
     "rootName": "微信读书",
-    "title": "书房",
-    "theme": "舆图",
+    "title": "书脉",
     "topN": 50,
     "exclude": [],
     "hideBooks": [],
 }
-THEMES = ("舆图", "羊皮纸", "星空")
 
 ORPHAN_SECTION = "没有对应划线的想法"
 UNKNOWN_CHAPTER = "其他章节"

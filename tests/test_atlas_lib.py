@@ -197,7 +197,8 @@ class ConfigAndPaths(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             cfg = lib.load_config(d)
             self.assertEqual(cfg["topN"], 50)
-            self.assertEqual(cfg["theme"], "舆图")
+            self.assertEqual(cfg["title"], "书脉")
+            self.assertNotIn("theme", cfg)
             cfg["exclude"].append("片段")
             lib.save_config(d, cfg)
             self.assertEqual(lib.load_config(d)["exclude"], ["片段"])

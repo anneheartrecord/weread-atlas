@@ -211,6 +211,70 @@ class TopicsTest(Base):
         for p, t in before.items():
             self.assertEqual(self.read(p), t)
 
+    def two_topics(self):
+        data = self.good_topics()
+        second = {
+            "name": "星际想象",
+            "domain": "小说",
+            "oneLiner": "远方的故事其实在写此地",
+            "books": ["星海旅人"],
+            "viewpoints": [
+                {"claim": "远方即此地", "text": "科幻写的是现在。", "books": ["星海旅人"]},
+                {"claim": "想象要耐心", "text": "慢慢展开。", "books": ["星海旅人"]},
+            ],
+            "related": [{"topic": "耐心的复利", "why": "后写的理由不会覆盖先写的"}],
+        }
+        data["topics"][0]["related"] = [{"topic": "星际想象", "why": "长时间尺度才看得见变化"}]
+        data["topics"].append(second)
+        del data["assign"]["星海旅人"]
+        return data
+
+    def test_related_validation(self):
+        data = self.two_topics()
+        data["topics"][0]["related"] = [
+            {"topic": "星际想像", "why": "理由"},
+            {"topic": "耐心的复利", "why": "自己"},
+            {"topic": "星际想象", "why": ""},
+            {"topic": "星际想象", "why": "长" * 27},
+            "不是对象",
+        ]
+        data["topics"][1]["related"] = "不是列表"
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 1)
+        joined = "\n".join(out)
+        for needle in ["related 主题找不到：星际想像，是不是「星际想象」", "related 指向了自己", "缺少 why",
+                       "超过 26 个字", "related 不是对象", "related 必须是列表"]:
+            self.assertIn(needle, joined)
+        self.assertFalse(os.path.exists(self.paths.topics_dir))
+
+    def test_missing_related_is_a_reminder(self):
+        self.write_topics(self.good_topics())
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 0)
+        self.assertTrue(any("没有 related" in line for line in out))
+
+    def test_related_written_to_both_cards_and_read_back(self):
+        self.write_topics(self.two_topics())
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 0)
+        self.assertTrue(any("用先写的理由" in line for line in out))
+        self.assertTrue(any("主题之间的关系 1 条" in line for line in out))
+        a = lib.read_block(self.read(self.paths.topic_card("耐心的复利")))
+        b = lib.read_block(self.read(self.paths.topic_card("星际想象")))
+        self.assertTrue(a.endswith("## 相关主题\n\n- [[星际想象]]：长时间尺度才看得见变化"))
+        self.assertTrue(b.endswith("## 相关主题\n\n- [[耐心的复利]]：长时间尺度才看得见变化"))
+        import vault_read  # noqa: E402
+        vault = vault_read.read_vault(self.paths.root)
+        rel = {t["name"]: t["related"] for t in vault["topics"]}
+        self.assertEqual(rel["耐心的复利"], [{"topic": "星际想象", "why": "长时间尺度才看得见变化"}])
+        self.assertEqual(rel["星际想象"], [{"topic": "耐心的复利", "why": "长时间尺度才看得见变化"}])
+        import render  # noqa: E402
+        data = render.build_page_data(vault)
+        self.assertEqual(len(data["relations"]), 1)
+        self.assertTrue(data["relations"][0]["cross"])
+        self.assertEqual(data["relations"][0]["kind"], "concept")
+
     def test_topic_removed_clears_note(self):
         self.write_topics(self.good_topics())
         topics.run(self.paths, log=quiet)

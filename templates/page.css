@@ -1,101 +1,50 @@
-/* 书脉 · 书房页. Three themes share one set of tokens; each theme keeps a
-   single hue (--k-ink) for every data mark. */
-
-/* 舆图: aged map paper, sepia ink. */
-:root[data-theme="yutu"] {
-  --k-canvas: #f2ead8;
-  --k-ivory: #f9f4e7;
-  --k-sand: #e9dec6;
-  --k-border: #dfd2b6;
-  --k-border-soft: #e7dcc4;
-  --k-ink: #7a4a24;
-  --k-ink-tint: #efdfc6;
-  --k-bar: #a8805c;
-  --k-bar-soft: #dcc8aa;
-  --k-text: #2a2119;
-  --k-warm: #45392c;
-  --k-olive: #5a4c3c;
-  --k-stone: #6f604e;
-  --k-shadow: 60, 42, 20;
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="yutu"] {
-    --k-canvas: #19150f;
-    --k-ivory: #221d16;
-    --k-sand: #2d261d;
-    --k-border: #3a3025;
-    --k-border-soft: #2d261d;
-    --k-ink: #dcb68b;
-    --k-ink-tint: #3a2d20;
-    --k-bar: #94704d;
-    --k-bar-soft: #4a3a2a;
-    --k-text: #f2e9d8;
-    --k-warm: #e2d6c1;
-    --k-olive: #cbbda6;
-    --k-stone: #a5967f;
-    --k-shadow: 0, 0, 0;
-  }
-}
-
-/* 羊皮纸: the Kami parchment palette, navy ink. */
-:root[data-theme="kami"] {
-  --k-canvas: #f5f4ed;
-  --k-ivory: #faf9f5;
-  --k-sand: #e8e6dc;
-  --k-border: #e8e6dc;
-  --k-border-soft: #e5e3d8;
-  --k-ink: #1b365d;
-  --k-ink-tint: #e4ecf5;
-  --k-bar: #8a9cb5;
-  --k-bar-soft: #cbd4e0;
-  --k-text: #141413;
-  --k-warm: #3d3d3a;
-  --k-olive: #504e49;
-  --k-stone: #6b6a64;
-  --k-shadow: 40, 32, 20;
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="kami"] {
-    --k-canvas: #141413;
-    --k-ivory: #1e1d1b;
-    --k-sand: #2a2927;
-    --k-border: #30302e;
-    --k-border-soft: #2a2927;
-    --k-ink: #a9bdd8;
-    --k-ink-tint: #26303d;
-    --k-bar: #55698a;
-    --k-bar-soft: #343d4a;
-    --k-text: #f5f4ed;
-    --k-warm: #dedcd2;
-    --k-olive: #c2c0b6;
-    --k-stone: #8f8d85;
-    --k-shadow: 0, 0, 0;
-  }
-}
-
-/* 星空: night sky, starlight ink. Dark only. */
-:root[data-theme="stars"] {
-  color-scheme: dark;
-  --k-canvas: #080d1c;
-  --k-ivory: #0f1730;
-  --k-sand: #18223f;
-  --k-border: #223052;
-  --k-border-soft: #1b2645;
-  --k-ink: #c3d5ff;
-  --k-ink-tint: #1f2c54;
-  --k-bar: #5d77b4;
-  --k-bar-soft: #2c3a63;
-  --k-text: #eef2fb;
-  --k-warm: #d4dcee;
-  --k-olive: #b3bed7;
-  --k-stone: #8f9bb8;
-  --k-shadow: 0, 0, 0;
-}
-
+/* 书脉 · 书房页. Paper and ink: neutrals carry a faint warm tint, one ink blue
+   for data and one cinnabar for the veins between domains. The page follows
+   the system's light or dark preference. */
 :root {
-  --k-serif: "LXGW WenKai Screen", "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "STSong", Georgia, serif;
+  color-scheme: light dark;
+  --k-canvas: #f5f3ec;
+  --k-ivory: #faf8f2;
+  --k-sand: #ebe7dc;
+  --k-border: #e2ddd0;
+  --k-border-soft: #ebe7dc;
+  --k-rule: #d9d3c4;
+  --k-ink: #1f3a5f;
+  --k-ink-tint: #e3e9f0;
+  --k-bar: #9aa8bb;
+  --k-bar-soft: #cdd5df;
+  --k-spine: #ece6d8;
+  --k-cinnabar: #a8432f;
+  --k-text: #1c1b18;
+  --k-warm: #3b3934;
+  --k-olive: #57534b;
+  --k-stone: #7a756b;
+  --k-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  --k-kai: "LXGW WenKai Screen", "Kaiti SC", "STKaiti", serif;
+  --k-num: "EB Garamond", "Noto Serif SC", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --k-canvas: #161512;
+    --k-ivory: #1d1c18;
+    --k-sand: #26241f;
+    --k-border: #2f2d27;
+    --k-border-soft: #26241f;
+    --k-rule: #3a372f;
+    --k-ink: #a9bdd8;
+    --k-ink-tint: #25303d;
+    --k-bar: #4f6280;
+    --k-bar-soft: #313a47;
+    --k-spine: #24221d;
+    --k-cinnabar: #d07a62;
+    --k-text: #f1eee6;
+    --k-warm: #dcd8cd;
+    --k-olive: #bdb8ac;
+    --k-stone: #8f8a7f;
+  }
 }
 
+/* ---- Base: a small reset so the page looks the same in every browser. ---- */
 *,
 *::before,
 *::after {
@@ -103,118 +52,148 @@
 }
 html {
   -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 body {
   margin: 0;
   background: var(--k-canvas);
   color: var(--k-text);
   font-family: var(--k-serif);
-  overflow-x: hidden;
+  line-height: 1.5;
 }
-:root[data-theme="stars"] body {
-  background: radial-gradient(ellipse 120% 70% at 50% -10%, #1a2550 0%, #0c1328 45%, #070b17 100%) fixed, #070b17;
-}
-p,
 h1,
+h2,
 h3,
+p,
+ol,
+ul,
+dl,
+dd,
 figure,
-blockquote,
+blockquote {
+  margin: 0;
+}
+h1,
+h2,
+h3 {
+  font-size: inherit;
+  font-weight: inherit;
+}
 ol,
 ul {
-  margin: 0;
+  list-style: none;
+  padding: 0;
+}
+img,
+svg {
+  display: block;
+  vertical-align: middle;
 }
 button {
   font: inherit;
+  color: inherit;
 }
-
-.bk-sky {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
+[hidden] {
+  display: none !important;
 }
-.bk-sky circle {
-  fill: #e6edff;
-}
-
 .bk-page {
-  position: relative;
-  z-index: 1;
   width: 100%;
   max-width: 64rem;
   margin: 0 auto;
-  padding: 3rem 1.5rem 3rem;
-  font-family: var(--k-serif);
-  font-synthesis-weight: none;
-  color: var(--k-text);
-  letter-spacing: 0.01em;
+  padding: 1.25rem 1rem;
+}
+@media (min-width: 640px) {
+  .bk-page {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .bk-page {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
 }
 
-.bk-overline {
+/* ---- Covers that fail to load, or books without one, get a cloth spine with the title. ---- */
+.bk-cover-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.5rem 0.6rem 0.75rem;
+  background: var(--k-ink);
+  color: var(--k-canvas);
+  border-left: 5px solid rgba(0, 0, 0, 0.22);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  text-align: center;
+  letter-spacing: 0.08em;
+  overflow: hidden;
+  word-break: break-all;
+}
+.bk-shelf .bk-cover-ph {
+  height: 172px;
+  width: 120px;
+  max-width: 82%;
+  border-radius: 1px 3px 3px 1px;
+  box-shadow: 0 1px 1px rgba(30, 24, 14, 0.18), 0 10px 18px -10px rgba(30, 24, 14, 0.35);
+}
+.bk-cover-ph.is-mini {
+  width: 52px;
+  height: 74px;
+  padding: 0.3rem;
+  font-size: 0.6rem;
+  border-left-width: 3px;
+  border-radius: 2px 4px 4px 2px;
+}
+.bk-cover-ph.is-large {
+  width: 84px;
+  height: 120px;
   font-size: 0.75rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--k-stone);
-  margin-bottom: 0.6rem;
-}
-.bk-hero {
-  margin-bottom: 2rem;
-}
-.bk-hero h1 {
-  font-size: 2.6rem;
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: 0.06em;
-  padding-left: 0.9rem;
-  border-left: 4px solid var(--k-ink);
-}
-:root[data-theme="stars"] .bk-hero h1 {
-  text-shadow: 0 0 24px rgba(195, 213, 255, 0.35);
+  border-radius: 2px 5px 5px 2px;
 }
 
-.bk-stats {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  background: var(--k-ivory);
-  border: 1px solid var(--k-border);
-  border-radius: 12px;
-  margin-bottom: 2.75rem;
+/* ---- Related topics inside the topic dialog. ---- */
+.bk-related {
+  margin-top: 1.6rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--k-border);
 }
-.bk-stat {
-  padding: 1.15rem 1.25rem 1rem;
-  min-width: 0;
+.bk-related-kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--k-cinnabar);
 }
-.bk-stat + .bk-stat {
-  border-left: 1px solid var(--k-border-soft);
-}
-.bk-stat-value {
-  font-size: 1.85rem;
-  font-weight: 500;
-  line-height: 1.15;
-  font-variant-numeric: tabular-nums lining-nums;
-}
-.bk-stat-value span {
-  font-size: 0.8rem;
-  color: var(--k-stone);
-  margin-left: 0.25rem;
-}
-.bk-stat-label {
-  font-size: 0.8rem;
-  color: var(--k-olive);
+.bk-related ol {
   margin-top: 0.3rem;
 }
+.bk-related li {
+  padding: 0.45rem 0;
+}
+.bk-related li + li {
+  border-top: 1px solid var(--k-border-soft);
+}
+.bk-related .bk-jump {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.bk-related em {
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--k-cinnabar);
+  margin-left: 0.5rem;
+}
+.bk-related-why {
+  display: block;
+  margin-top: 0.1rem;
+  font-family: var(--k-kai);
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--k-warm);
+}
 
-.bk-section {
-  margin-bottom: 1.25rem;
-}
-.bk-panel {
-  background: var(--k-ivory);
-  border: 1px solid var(--k-border);
-  border-radius: 12px;
-  padding: 1.25rem 1.25rem 0.85rem;
-}
+/* ---- The rest is the design as published, unchanged. ---- */
+
 
 .bk-bar {
   width: 100%;
@@ -236,15 +215,6 @@ button {
 .bk-bar.is-peak {
   background: var(--k-ink);
 }
-
-.bk-year-chart {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: 1.25rem;
-  height: 220px;
-  padding: 0 0.5rem;
-}
 .bk-year-col {
   display: flex;
   flex-direction: column;
@@ -255,7 +225,6 @@ button {
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums lining-nums;
   margin-bottom: 0.35rem;
-  white-space: nowrap;
 }
 .bk-year-value small {
   font-size: 0.72rem;
@@ -301,7 +270,6 @@ button {
   display: flex;
   gap: 2px;
   margin-top: 0.4rem;
-  overflow: hidden;
 }
 .bk-month-axis span,
 .bk-hour-axis span {
@@ -311,36 +279,6 @@ button {
   color: var(--k-stone);
   white-space: nowrap;
   font-variant-numeric: tabular-nums lining-nums;
-}
-
-.bk-two {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1.25rem;
-}
-.bk-two.is-single {
-  grid-template-columns: minmax(0, 1fr);
-}
-.bk-two .bk-section {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.bk-two .bk-panel {
-  flex: 1;
-}
-
-.bk-radar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem;
-}
-.bk-radar svg {
-  width: 100%;
-  max-width: 380px;
-  height: auto;
-  font-family: var(--k-serif);
 }
 .bk-radar-ring {
   fill: none;
@@ -374,10 +312,6 @@ button {
 .bk-radar-pt:focus-visible .bk-radar-dot {
   r: 6;
 }
-.bk-radar-pt:focus-visible .bk-radar-hit {
-  stroke: var(--k-ink);
-  stroke-width: 1.5;
-}
 .bk-radar-label {
   font-size: 13px;
   fill: var(--k-warm);
@@ -386,438 +320,7 @@ button {
   font-size: 11px;
   fill: var(--k-stone);
 }
-.bk-cats {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding-bottom: 1.2rem;
-}
-.bk-cat-row {
-  display: grid;
-  grid-template-columns: 4.6rem minmax(0, 1fr) 6.6rem;
-  align-items: center;
-  gap: 0.7rem;
-  outline: none;
-  border-radius: 6px;
-}
-.bk-cat-row:focus-visible {
-  box-shadow: 0 0 0 2px var(--k-ink);
-}
-.bk-cat-name {
-  font-size: 0.85rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.bk-cat-track {
-  height: 10px;
-}
-.bk-cat-bar {
-  height: 100%;
-  background: var(--k-bar);
-  border-radius: 0 4px 4px 0;
-  transition: background-color 0.15s;
-}
-.bk-cat-bar.is-peak,
-.bk-cat-row:hover .bk-cat-bar,
-.bk-cat-row:focus-visible .bk-cat-bar {
-  background: var(--k-ink);
-}
-.bk-cat-value {
-  font-size: 0.78rem;
-  color: var(--k-stone);
-  text-align: right;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums lining-nums;
-}
 
-/* Knowledge map. */
-.bk-atlas {
-  margin-top: 3.5rem;
-  padding-top: 2.5rem;
-  border-top: 1px solid var(--k-border);
-}
-.bk-map-scroll {
-  border-radius: 14px;
-  max-width: 100%;
-}
-.bk-map {
-  display: block;
-  width: 100%;
-  height: auto;
-  font-family: var(--k-serif);
-}
-.bk-map text {
-  pointer-events: none;
-}
-.bk-city {
-  cursor: pointer;
-  outline: none;
-  transition: opacity 0.2s;
-}
-.bk-city-hit {
-  fill: transparent;
-}
-.bk-road {
-  fill: none;
-  stroke: var(--k-ink);
-  stroke-linecap: round;
-  transition: stroke-opacity 0.2s;
-}
-.bk-road-hit {
-  fill: none;
-  stroke: transparent;
-  stroke-width: 10;
-  pointer-events: stroke;
-}
-.bk-map.is-focus .bk-city {
-  opacity: 0.35;
-}
-.bk-map.is-focus .bk-city.is-on {
-  opacity: 1;
-}
-.bk-city:focus-visible .bk-city-label {
-  text-decoration: underline;
-}
-.bk-city-focus {
-  fill: none;
-  stroke: none;
-}
-.bk-city:focus-visible .bk-city-focus {
-  stroke: var(--k-ink);
-  stroke-width: 1.5;
-  stroke-dasharray: 3 3;
-}
-.bk-legend text,
-.bk-compass-n {
-  font-size: 12px;
-  fill: var(--k-stone);
-}
-
-/* 舆图 map: islands on a wave-patterned sea. */
-.is-yutu .bk-map-sea {
-  fill: url(#bk-sea);
-}
-.is-yutu .bk-wave {
-  fill: none;
-  stroke: var(--k-ink);
-  stroke-opacity: 0.12;
-  stroke-width: 1;
-  stroke-linecap: round;
-}
-.is-yutu .bk-map-frame {
-  fill: none;
-  stroke: var(--k-ink);
-  stroke-opacity: 0.55;
-  stroke-width: 1.6;
-}
-.is-yutu .bk-map-frame.is-inner {
-  stroke-width: 0.6;
-  stroke-opacity: 0.4;
-}
-.is-yutu .bk-land {
-  fill: var(--k-ivory);
-  stroke: var(--k-ink);
-  stroke-opacity: 0.55;
-  stroke-width: 1.3;
-}
-.is-yutu .bk-coast {
-  fill: var(--k-canvas);
-  stroke: var(--k-ink);
-  stroke-opacity: 0.24;
-  stroke-width: 1;
-  stroke-dasharray: 2 4;
-}
-.is-yutu .bk-coast.is-far {
-  fill: none;
-  stroke-opacity: 0.14;
-}
-.is-yutu .bk-road {
-  stroke-opacity: 0.32;
-}
-.is-yutu .bk-road.is-sea {
-  stroke-dasharray: 1 6;
-  stroke-opacity: 0.42;
-}
-.is-yutu.is-focus .bk-road[data-a] {
-  stroke-opacity: 0.06;
-}
-.is-yutu.is-focus .bk-road.is-on {
-  stroke-opacity: 0.85;
-}
-.is-yutu .bk-region-label {
-  font-size: 19px;
-  letter-spacing: 0.32em;
-  fill: var(--k-ink);
-  font-weight: 500;
-}
-.is-yutu .bk-region-count {
-  font-size: 12px;
-  letter-spacing: 0.05em;
-  fill: var(--k-stone);
-}
-.is-yutu .bk-city-ring {
-  fill: var(--k-canvas);
-  stroke: var(--k-ink);
-  stroke-width: 1.6;
-  transition: fill 0.2s;
-}
-.is-yutu .bk-city-dot {
-  fill: var(--k-ink);
-}
-.is-yutu .bk-city-label {
-  font-size: 13px;
-  fill: var(--k-warm);
-  paint-order: stroke;
-  stroke: var(--k-ivory);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-}
-.is-yutu .bk-city:hover .bk-city-dot,
-.is-yutu .bk-city:focus-visible .bk-city-dot {
-  fill: var(--k-canvas);
-}
-.is-yutu .bk-city:hover .bk-city-ring,
-.is-yutu .bk-city:focus-visible .bk-city-ring {
-  fill: var(--k-ink);
-}
-.is-yutu .bk-compass-ring {
-  fill: none;
-  stroke: var(--k-ink);
-  stroke-opacity: 0.45;
-}
-.is-yutu .bk-compass-ring.is-thin {
-  stroke-dasharray: 1 3;
-}
-.is-yutu .bk-compass-needle {
-  fill: var(--k-ink);
-  fill-opacity: 0.7;
-}
-.is-yutu .bk-compass-needle.is-light {
-  fill-opacity: 0.25;
-}
-.is-yutu .bk-compass-n {
-  fill: var(--k-ink);
-}
-
-/* 羊皮纸 map: a clean star chart. */
-.is-kami .bk-map-bg {
-  fill: var(--k-ivory);
-}
-.is-kami .bk-map-frame {
-  fill: none;
-  stroke: var(--k-ink);
-  stroke-opacity: 0.35;
-  stroke-width: 1;
-}
-.is-kami .bk-grat {
-  fill: none;
-  stroke: var(--k-ink);
-  stroke-opacity: 0.08;
-  stroke-width: 1;
-}
-.is-kami .bk-grat.is-dash {
-  stroke-dasharray: 2 5;
-}
-.is-kami .bk-road {
-  stroke-opacity: 0.4;
-}
-.is-kami .bk-road.is-sea {
-  stroke-dasharray: 4 5;
-  stroke-opacity: 0.32;
-}
-.is-kami.is-focus .bk-road[data-a] {
-  stroke-opacity: 0.06;
-}
-.is-kami.is-focus .bk-road.is-on {
-  stroke-opacity: 0.9;
-}
-.is-kami .bk-region-label {
-  font-size: 15px;
-  letter-spacing: 0.42em;
-  fill: var(--k-ink);
-}
-.is-kami .bk-region-count {
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  fill: var(--k-stone);
-}
-.is-kami .bk-region-rule {
-  stroke: var(--k-ink);
-  stroke-opacity: 0.3;
-  stroke-width: 1;
-}
-.is-kami .bk-city-ring {
-  fill: none;
-  stroke: var(--k-ink);
-  stroke-opacity: 0.45;
-  stroke-width: 0.8;
-}
-.is-kami .bk-city-dot {
-  fill: var(--k-ink);
-  transition: r 0.2s;
-}
-.is-kami .bk-city-label {
-  font-size: 13px;
-  fill: var(--k-warm);
-  paint-order: stroke;
-  stroke: var(--k-ivory);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-}
-.is-kami .bk-city:hover .bk-city-ring,
-.is-kami .bk-city:focus-visible .bk-city-ring {
-  stroke-opacity: 1;
-  stroke-width: 1.4;
-}
-.is-kami .bk-compass-line {
-  stroke: var(--k-ink);
-  stroke-opacity: 0.45;
-}
-.is-kami .bk-compass-n {
-  fill: var(--k-ink);
-}
-
-/* 星空 map: stars, constellation lines, nebulae. */
-.is-stars .bk-map-bg {
-  fill: #060a17;
-}
-.is-stars .bk-map-frame {
-  fill: none;
-  stroke: #c3d5ff;
-  stroke-opacity: 0.18;
-}
-.is-stars .bk-bgstar {
-  fill: #dfe8ff;
-}
-.is-twinkle {
-  animation: bk-twinkle 5.5s ease-in-out infinite;
-}
-@keyframes bk-twinkle {
-  0%,
-  100% {
-    opacity: var(--o);
-  }
-  50% {
-    opacity: calc(var(--o) * 0.3);
-  }
-}
-.is-stars .bk-nebula {
-  fill: #6f8fdc;
-}
-.is-stars .bk-road {
-  stroke: #c3d5ff;
-  stroke-opacity: 0.4;
-}
-.is-stars .bk-road.is-sea {
-  stroke-dasharray: 2 6;
-  stroke-opacity: 0.3;
-}
-.is-stars.is-focus .bk-road[data-a] {
-  stroke-opacity: 0.06;
-}
-.is-stars.is-focus .bk-road.is-on {
-  stroke-opacity: 0.95;
-}
-.is-stars .bk-region-label {
-  font-size: 17px;
-  letter-spacing: 0.4em;
-  fill: #d7e2ff;
-  fill-opacity: 0.85;
-}
-.is-stars .bk-region-count {
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  fill: #9aa8c8;
-}
-.is-stars .bk-star-glow {
-  fill: #a9c2ff;
-  opacity: 0.55;
-  transition: opacity 0.2s;
-}
-.is-stars .bk-star-core {
-  fill: #f4f7ff;
-}
-.is-stars .bk-star-spike {
-  stroke: #e4ecff;
-  stroke-width: 0.8;
-  stroke-linecap: round;
-  opacity: 0.7;
-}
-.is-stars .bk-city-label {
-  font-size: 13px;
-  fill: #e3e9f8;
-  paint-order: stroke;
-  stroke: #060a17;
-  stroke-width: 4px;
-  stroke-linejoin: round;
-}
-.is-stars .bk-city:hover .bk-star-glow,
-.is-stars .bk-city:focus-visible .bk-star-glow {
-  opacity: 1;
-}
-.is-stars .bk-legend text {
-  fill: #9aa8c8;
-}
-.is-stars .bk-city:focus-visible .bk-city-focus {
-  stroke: #e3e9f8;
-}
-
-.bk-topics {
-  list-style: none;
-  padding: 0;
-  margin: 1.75rem 0 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.1rem;
-}
-.bk-topics li {
-  display: flex;
-  min-width: 0;
-}
-.bk-topic {
-  all: unset;
-  box-sizing: border-box;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 1rem 1rem 0.95rem;
-  background: var(--k-ivory);
-  border: 1px solid var(--k-border);
-  border-top: 3px solid var(--k-ink);
-  border-radius: 10px;
-  font-family: var(--k-serif);
-  color: var(--k-text);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-}
-.bk-topic:hover {
-  box-shadow: 0 0 0 1px var(--k-border), 0 10px 28px rgba(var(--k-shadow), 0.1);
-  transform: translateY(-2px);
-}
-.bk-topic:focus-visible {
-  box-shadow: 0 0 0 2px var(--k-ink);
-}
-.bk-topic-domain {
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  color: var(--k-ink);
-}
-.bk-topic-name {
-  font-size: 1.02rem;
-  font-weight: 500;
-  line-height: 1.4;
-  margin-top: 0.3rem;
-}
-.bk-topic-line {
-  font-size: 0.84rem;
-  line-height: 1.7;
-  color: var(--k-warm);
-  margin-top: 0.55rem;
-}
-
-/* Book shelf. */
 .bk-picks {
   margin-top: 3.5rem;
   padding-top: 2.5rem;
@@ -853,7 +356,7 @@ button {
 .bk-sort-btn.is-active {
   background: var(--k-ivory);
   color: var(--k-text);
-  box-shadow: 0 1px 2px rgba(var(--k-shadow), 0.12);
+  box-shadow: 0 1px 2px rgba(40, 32, 20, 0.1);
 }
 .bk-sort-btn:focus-visible {
   box-shadow: 0 0 0 2px var(--k-ink);
@@ -892,103 +395,31 @@ button {
 .bk-chip-btn.is-active span {
   color: var(--k-ink-tint);
 }
-:root[data-theme="stars"] .bk-chip-btn.is-active span {
-  color: #34416b;
-}
 .bk-chip-btn:focus-visible {
-  box-shadow: 0 0 0 2px var(--k-canvas), 0 0 0 4px var(--k-ink);
-}
-
-.bk-grid {
-  list-style: none;
-  padding: 0;
-  margin: 1.75rem 0 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.1rem;
-}
-.bk-grid li {
-  display: flex;
-  min-width: 0;
+  box-shadow: 0 0 0 2px var(--k-ink);
 }
 .bk-grid li[hidden] {
   display: none;
 }
-.bk-book {
-  all: unset;
-  box-sizing: border-box;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  background: var(--k-ivory);
-  border: 1px solid var(--k-border);
-  border-radius: 12px;
-  overflow: hidden;
-  font-family: var(--k-serif);
-  color: var(--k-text);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-}
-.bk-book:hover {
-  border-color: var(--k-bar-soft);
-  box-shadow: 0 0 0 1px var(--k-border), 0 10px 28px rgba(var(--k-shadow), 0.1);
-  transform: translateY(-2px);
-}
-.bk-book:focus-visible {
-  box-shadow: 0 0 0 2px var(--k-ink);
-}
-.bk-shelf {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  background: var(--k-sand);
-  padding: 1.9rem 0 1.1rem;
-}
-.bk-shelf img,
-.bk-shelf .bk-cover-ph {
-  width: 58%;
-  max-width: 120px;
-  height: auto;
-  aspect-ratio: 120 / 172;
-  object-fit: cover;
-  border-radius: 2px 5px 5px 2px;
-  box-shadow: 0 1px 2px rgba(var(--k-shadow), 0.18), 0 8px 18px rgba(var(--k-shadow), 0.16);
-  background: var(--k-border);
-}
-.bk-cover-ph {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.6rem 0.5rem 0.6rem 0.75rem;
-  background: var(--k-ink) !important;
-  color: var(--k-canvas);
-  border-left: 5px solid rgba(0, 0, 0, 0.22);
-  font-size: 0.85rem;
-  line-height: 1.45;
-  text-align: center;
-  letter-spacing: 0.08em;
-  overflow: hidden;
-  word-break: break-all;
-}
-.bk-cover-ph.is-mini {
-  width: 52px;
-  height: 74px;
-  padding: 0.3rem;
-  font-size: 0.6rem;
-  border-left-width: 3px;
-}
-.bk-cover-ph.is-large {
-  width: 84px;
-  height: 120px;
+.bk-dialog-score {
   font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--k-ink);
+}
+.bk-book-verdict.is-quote::before {
+  content: "“";
+}
+.bk-book-verdict.is-quote::after {
+  content: "”";
+}
+.bk-grid li {
+  display: flex;
 }
 .bk-book-body {
   display: flex;
   flex-direction: column;
   flex: 1;
   padding: 0.9rem 1rem 1rem;
-  min-width: 0;
 }
 .bk-book-title {
   font-size: 1.02rem;
@@ -1009,13 +440,6 @@ button {
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  overflow-wrap: anywhere;
-}
-.bk-book-verdict.is-quote::before {
-  content: "“";
-}
-.bk-book-verdict.is-quote::after {
-  content: "”";
 }
 .bk-book-meta {
   display: flex;
@@ -1028,104 +452,11 @@ button {
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* Dialog. */
-.bk-dialog {
-  position: fixed;
-  inset: 0;
-  margin: auto;
-  height: fit-content;
-  overflow-y: auto;
-  width: min(640px, calc(100vw - 32px));
-  max-height: calc(100dvh - 48px);
-  padding: 0;
-  border: 1px solid var(--k-border);
-  border-radius: 16px;
-  background: var(--k-canvas);
-  color: var(--k-text);
-  font-family: var(--k-serif);
-  box-shadow: 0 24px 60px rgba(var(--k-shadow), 0.3);
-}
-.bk-dialog::backdrop {
-  background: rgba(20, 20, 19, 0.45);
-}
-:root[data-theme="stars"] .bk-dialog::backdrop {
-  background: rgba(2, 4, 12, 0.7);
-}
-.bk-dialog-inner {
-  position: relative;
-  padding: 1.75rem 1.75rem 1.5rem;
-}
-.bk-close {
-  all: unset;
-  cursor: pointer;
-  position: absolute;
-  top: 0.9rem;
-  right: 1.1rem;
-  font-size: 1.5rem;
-  line-height: 1;
-  color: var(--k-stone);
-  border-radius: 4px;
-  padding: 0 0.2rem;
-}
-.bk-close:hover {
-  color: var(--k-text);
-}
-.bk-close:focus-visible {
-  box-shadow: 0 0 0 2px var(--k-ink);
-}
-.bk-dialog h3 {
-  outline: none;
-}
-.bk-dialog-score {
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  color: var(--k-ink);
-  padding-right: 2rem;
-}
-.bk-dialog-head {
-  display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
-  gap: 1.1rem;
-  align-items: start;
-}
-.bk-dialog-head img {
-  width: 84px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 2px 5px 5px 2px;
-  box-shadow: 0 6px 14px rgba(var(--k-shadow), 0.18);
-}
-.bk-dialog-head h3,
+
 .bk-topic-head h3 {
   font-size: 1.35rem;
   font-weight: 500;
   margin-top: 0.15rem;
-  padding-right: 1.5rem;
-}
-.bk-pills {
-  list-style: none;
-  padding: 0;
-  margin: 0.7rem 0 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-.bk-pills li {
-  font-size: 0.72rem;
-  color: var(--k-olive);
-  background: var(--k-sand);
-  border-radius: 999px;
-  padding: 0.15rem 0.6rem;
-  font-variant-numeric: tabular-nums lining-nums;
-}
-.bk-dialog-verdict {
-  font-size: 1rem;
-  line-height: 1.8;
-  margin-top: 1.25rem;
-  padding: 0.9rem 1rem;
-  background: var(--k-ivory);
-  border-left: 3px solid var(--k-ink);
-  border-radius: 0 8px 8px 0;
 }
 .bk-views {
   list-style: none;
@@ -1232,8 +563,79 @@ button {
   height: 74px;
   object-fit: cover;
   border-radius: 2px 4px 4px 2px;
-  box-shadow: 0 3px 8px rgba(var(--k-shadow), 0.18);
+  box-shadow: 0 3px 8px rgba(40, 32, 20, 0.18);
   background: var(--k-border);
+}
+
+.bk-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  overflow-y: auto;
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  border: 1px solid var(--k-border);
+  border-radius: 16px;
+  background: var(--k-canvas);
+  color: var(--k-text);
+  font-family: var(--k-serif);
+  box-shadow: 0 24px 60px rgba(30, 25, 15, 0.22);
+}
+.bk-dialog::backdrop {
+  background: rgba(20, 20, 19, 0.45);
+}
+.bk-dialog-inner {
+  position: relative;
+  padding: 1.75rem 1.75rem 1.5rem;
+}
+.bk-close {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  top: 0.9rem;
+  right: 1.1rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--k-stone);
+}
+.bk-close:hover {
+  color: var(--k-text);
+}
+.bk-dialog-head {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 1.1rem;
+  align-items: start;
+}
+.bk-dialog-head img {
+  width: 84px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 2px 5px 5px 2px;
+  box-shadow: 0 6px 14px rgba(40, 32, 20, 0.18);
+}
+.bk-dialog-head h3 {
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin-top: 0.15rem;
+}
+.bk-pills {
+  list-style: none;
+  padding: 0;
+  margin: 0.7rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.bk-pills li {
+  font-size: 0.72rem;
+  color: var(--k-olive);
+  background: var(--k-sand);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .bk-notes {
   margin-top: 1.4rem;
@@ -1254,7 +656,6 @@ button {
   line-height: 1.8;
   color: var(--k-warm);
   border-bottom: 1px solid var(--k-border-soft);
-  overflow-wrap: anywhere;
 }
 .bk-marks li::before {
   content: "";
@@ -1265,22 +666,24 @@ button {
   height: 2px;
   background: var(--k-ink);
 }
+.bk-note {
+  margin: 0;
+}
 .bk-note blockquote {
+  margin: 0;
   font-size: 0.82rem;
   line-height: 1.75;
   color: var(--k-stone);
   border-left: 1px solid var(--k-border);
   padding-left: 0.8rem;
-  overflow-wrap: anywhere;
 }
 .bk-note figcaption {
   margin-top: 0.4rem;
   padding-left: 0.8rem;
   font-size: 0.95rem;
   line-height: 1.75;
-  overflow-wrap: anywhere;
 }
-.bk-note figcaption > span:first-child {
+.bk-note figcaption span {
   display: inline-block;
   font-size: 0.7rem;
   color: var(--k-ink);
@@ -1317,14 +720,9 @@ button {
   color: var(--k-olive);
   text-decoration: none;
   white-space: nowrap;
-  border-radius: 3px;
 }
 .bk-link:hover {
   color: var(--k-ink);
-}
-.bk-link:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--k-ink);
 }
 
 .bk-footnote {
@@ -1345,64 +743,417 @@ button {
   padding: 0.35rem 0.6rem;
   border-radius: 6px;
   white-space: nowrap;
-  max-width: calc(100vw - 16px);
+}
+
+/* ---- Waza pass: paper page, no card boxes; sections are separated by hairlines and space. ---- */
+.bk-page {
+  font-family: var(--k-serif);
+  font-synthesis-weight: none;
+  color: var(--k-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.bk-hero {
+  padding-bottom: 1.6rem;
+  border-bottom: 1px solid var(--k-rule);
+}
+.bk-hero h1 {
+  font-size: 3.4rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+.bk-ledger {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem 2.6rem;
+  margin: 2.1rem 0 0;
+}
+.bk-stat {
+  display: flex;
+  flex-direction: column-reverse;
+  margin: 0;
+}
+.bk-stat-value {
+  margin: 0;
+  font-family: var(--k-num);
+  font-size: 2.9rem;
+  font-weight: 400;
+  line-height: 1;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+.bk-stat-value span {
+  font-family: var(--k-serif);
+  font-size: 0.85rem;
+  color: var(--k-stone);
+  margin-left: 0.3rem;
+}
+.bk-stat-label {
+  font-size: 0.78rem;
+  color: var(--k-stone);
+  margin-top: 0.45rem;
+}
+
+/* ---- The knowledge ring and its veins panel: the page's one visual anchor. ---- */
+.bk-atlas {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 1.6rem;
+  align-items: center;
+  margin: 2.2rem 0 0;
+}
+.bk-map-scroll {
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+.bk-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--k-serif);
+}
+.bk-domain-arc {
+  fill: none;
+  stroke: var(--k-text);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+.bk-domain-label {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  fill: var(--k-text);
+  paint-order: stroke;
+  stroke: var(--k-canvas);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.bk-road {
+  fill: none;
+  stroke: var(--k-ink);
+  stroke-opacity: 0.3;
+  stroke-linecap: round;
+  transition: stroke-opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bk-road.is-books {
+  stroke-dasharray: 2 3;
+}
+.bk-road.is-sea {
+  stroke: var(--k-cinnabar);
+  stroke-opacity: 0.62;
+}
+.bk-map.is-focus .bk-road {
+  stroke-opacity: 0.06;
+}
+.bk-map.is-focus .bk-road.is-on {
+  stroke-opacity: 0.95;
+}
+.bk-city {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bk-node-hit {
+  fill: transparent;
+}
+.bk-node {
+  fill: var(--k-ink);
+  stroke: var(--k-canvas);
+  stroke-width: 2;
+  transition: fill 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bk-node-label {
+  font-size: 13px;
+  fill: var(--k-warm);
+  transition: fill 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bk-map.is-focus .bk-city {
+  opacity: 0.3;
+}
+.bk-map.is-focus .bk-city.is-on {
+  opacity: 1;
+}
+.bk-city.is-pinned .bk-node,
+.bk-city:focus-visible .bk-node {
+  fill: var(--k-cinnabar);
+}
+.bk-city.is-pinned .bk-node-label,
+.bk-city:focus-visible .bk-node-label {
+  fill: var(--k-text);
+  font-weight: 600;
+}
+@media (hover: hover) {
+  .bk-city:hover .bk-node-label {
+    fill: var(--k-text);
+  }
+}
+
+.bk-veins {
+  max-height: 600px;
+  overflow-y: auto;
+  padding-left: 1.4rem;
+  border-left: 1px solid var(--k-rule);
+  overscroll-behavior: contain;
+}
+.bk-veins-kicker {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  color: var(--k-cinnabar);
+}
+.bk-veins-title {
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 0.3rem;
+}
+.bk-veins-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+}
+.bk-veins-open {
+  all: unset;
+  cursor: pointer;
+  color: var(--k-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.bk-veins-back {
+  all: unset;
+  cursor: pointer;
+  color: var(--k-stone);
+}
+.bk-veins-open:focus-visible,
+.bk-veins-back:focus-visible {
+  outline: 2px solid var(--k-ink);
+  outline-offset: 2px;
+}
+.bk-veins-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.9rem 0 0;
+}
+.bk-veins-list li + li {
+  border-top: 1px solid var(--k-border-soft);
+}
+.bk-vein {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  padding: 0.7rem 0;
+}
+.bk-vein:focus-visible {
+  outline: 2px solid var(--k-ink);
+  outline-offset: 2px;
+}
+.bk-vein-pair {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--k-text);
+}
+.bk-vein-pair i {
+  font-style: normal;
+  color: var(--k-cinnabar);
+  margin: 0 0.4rem;
+}
+.bk-vein-pair em {
+  font-style: normal;
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--k-cinnabar);
+  margin-left: 0.5rem;
+}
+.bk-vein-why {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--k-kai);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--k-warm);
+}
+.bk-vein-books {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--k-stone);
+}
+.bk-vein-empty {
+  font-size: 0.88rem;
+  color: var(--k-stone);
+  padding: 0.7rem 0;
+}
+@media (hover: hover) {
+  .bk-vein:hover .bk-vein-pair {
+    color: var(--k-cinnabar);
+  }
+}
+
+/* ---- Reading rhythm: month strip on top, years, hours and the radar beneath. ---- */
+.bk-rhythm {
+  margin-top: 2.8rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--k-rule);
+}
+.bk-rhythm-row {
+  display: grid;
+  grid-template-columns: 0.8fr 1.3fr 1fr;
+  gap: 2.4rem;
+  align-items: end;
+  margin-top: 2.4rem;
+}
+.bk-year-chart {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.7rem;
+  height: 190px;
+}
+.bk-year-value {
+  font-family: var(--k-num);
+  font-size: 1.05rem;
+}
+.bk-bar {
+  border-radius: 1px 1px 0 0;
+}
+.bk-radar svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---- Bookshelf of covers: no card boxes, covers stand on a shelf line. ---- */
+.bk-grid {
+  list-style: none;
+  padding: 0;
+  margin: 1.9rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2.4rem 1.6rem;
+}
+.bk-book {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  font-family: var(--k-serif);
+  color: var(--k-text);
+}
+.bk-book:focus-visible {
+  outline: 2px solid var(--k-ink);
+  outline-offset: 4px;
+}
+.bk-shelf {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 196px;
+  padding-bottom: 0;
+  border-bottom: 1.4px solid var(--k-text);
+}
+.bk-shelf img {
+  width: auto;
+  height: 172px;
+  max-width: 82%;
+  aspect-ratio: 120 / 172;
+  object-fit: cover;
+  border-radius: 1px 3px 3px 1px;
+  box-shadow: 0 1px 1px rgba(30, 24, 14, 0.18), 0 10px 18px -10px rgba(30, 24, 14, 0.35);
+  outline: 1px solid rgba(0, 0, 0, 0.08);
+  outline-offset: -1px;
+  background: var(--k-sand);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (hover: hover) {
+  .bk-book:hover .bk-shelf img {
+    transform: translateY(-4px);
+  }
+}
+.bk-book-body {
+  padding: 0.85rem 0 0;
+}
+.bk-book-verdict {
+  font-family: var(--k-kai);
+}
+
+/* ---- Dialog conclusion: a tinted block with a cinnabar seal dot instead of a side rule. ---- */
+.bk-dialog-verdict {
+  position: relative;
+  font-size: 1rem;
+  line-height: 1.85;
+  margin-top: 1.25rem;
+  padding: 0.95rem 1.1rem 0.95rem 2.1rem;
+  background: var(--k-ivory);
+  border-radius: 6px;
+}
+.bk-dialog-verdict::before {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  top: 1.55rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 1px;
+  background: var(--k-cinnabar);
+}
+.bk-note figcaption,
+.bk-note blockquote {
+  font-family: var(--k-kai);
 }
 
 @media (max-width: 900px) {
-  .bk-grid,
-  .bk-topics {
+  .bk-atlas {
+    grid-template-columns: 1fr;
+  }
+  .bk-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .bk-rhythm-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bk-radar {
+    grid-column: span 2;
+    max-width: 420px;
   }
 }
 @media (max-width: 720px) {
-  .bk-page {
-    padding: 2rem 1rem 2.5rem;
-  }
-  /* The map keeps its labels readable by scrolling sideways inside its own frame. */
-  .bk-map-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border: 1px solid var(--k-border);
-  }
-  .bk-map {
-    width: var(--map-mw, 760px);
-    max-width: none;
-  }
-  .bk-topics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+  .bk-veins {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--k-rule);
+    padding-top: 1rem;
+    max-height: none;
   }
   .bk-hero h1 {
-    font-size: 2.1rem;
+    font-size: 2.6rem;
   }
-  .bk-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .bk-ledger {
+    gap: 1rem 1.8rem;
   }
-  .bk-stat + .bk-stat {
-    border-left: 0;
+  .bk-stat-value {
+    font-size: 2.2rem;
   }
-  .bk-stat {
-    border-bottom: 1px solid var(--k-border-soft);
+  .bk-rhythm-row {
+    grid-template-columns: 1fr;
   }
-  .bk-stat:nth-child(even) {
-    border-left: 1px solid var(--k-border-soft);
-  }
-  .bk-stat:last-child:nth-child(odd) {
-    grid-column: span 2;
-    border-bottom: 0;
-  }
-  .bk-two {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .bk-year-chart {
-    gap: 0.6rem;
-    height: 180px;
+  .bk-radar {
+    grid-column: auto;
   }
   .bk-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+    gap: 1.8rem 1rem;
+  }
+  .bk-shelf {
+    height: 168px;
+  }
+  .bk-shelf img {
+    height: 146px;
   }
   .bk-book-verdict {
     -webkit-line-clamp: 3;
@@ -1411,9 +1162,16 @@ button {
     padding: 1.4rem 1.2rem 1.2rem;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-    animation: none !important;
+
+/* ---- Fewer than three rhythm charts: let the ones there are share the row. ---- */
+.bk-rhythm-row.is-2 {
+  grid-template-columns: 0.8fr 1.3fr;
+}
+.bk-rhythm-row.is-1 {
+  grid-template-columns: minmax(0, 32rem);
+}
+@media (max-width: 720px) {
+  .bk-rhythm-row.is-2 {
+    grid-template-columns: 1fr;
   }
 }
