@@ -144,6 +144,22 @@ class DigestTest(Base):
         self.assertEqual(files[0][1], 1)
 
 
+    def test_new_does_not_confuse_books_with_the_same_title(self):
+        books = lib.read_json(self.paths.books_json)
+        for b in books:
+            if b["fileName"] == "复利花园（林一）":
+                b["title"] = "复利花园"  # two books titled the same, told apart by file name
+        lib.write_json(self.paths.books_json, books)
+        data = self.good_topics()
+        data["topics"][0]["books"] = ["复利花园"]
+        for v in data["topics"][0]["viewpoints"]:
+            v["books"] = ["复利花园"]
+        self.write_topics(data)
+        old = time.time() - 100
+        os.utime(self.paths.topics_json, (old, old))
+        self.assertEqual([b["fileName"] for b in digest.select_new(books, self.paths)], ["复利花园（林一）"])
+
+
 class TopicsTest(Base):
     def test_validation_lists_all_errors_and_writes_nothing(self):
         bad = self.good_topics()

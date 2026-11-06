@@ -102,14 +102,31 @@ def topic_references(topics):
     return refs
 
 
+def referenced_files(books, refs):
+    """File names the references point at, resolved the way topics.py resolves them:
+    an exact file name first, otherwise the first book with that full title. Two books
+    sharing a title stay distinct, because each reference lands on exactly one file."""
+    by_file = {b["fileName"] for b in books}
+    by_title = {}
+    for b in books:
+        by_title.setdefault(b.get("title"), b["fileName"])
+    out = set()
+    for r in refs:
+        r = lib.unwikilink(r) if isinstance(r, str) else r
+        if r in by_file:
+            out.add(r)
+        elif r in by_title:
+            out.add(by_title[r])
+    return out
+
+
 def select_new(books, paths):
     topics = lib.read_json(paths.topics_json)
     if topics is None:
         return list(books)
     mtime = os.path.getmtime(paths.topics_json)
-    refs = topic_references(topics)
-    return [b for b in books
-            if (b["fileName"] not in refs and b.get("title") not in refs) or (b.get("noteSort") or 0) > mtime]
+    placed = referenced_files(books, topic_references(topics))
+    return [b for b in books if b["fileName"] not in placed or (b.get("noteSort") or 0) > mtime]
 
 
 def render_book(n, b):
