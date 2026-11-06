@@ -96,6 +96,63 @@ class NotesTest(Base):
         self.assertEqual(counts["unchanged"], 3)
 
 
+class BlockGuardTest(Base):
+    def edit_inside(self, path, old, new):
+        text = self.read(path)
+        self.assertIn(old, text)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text.replace(old, new, 1))
+
+    def backups(self):
+        d = os.path.join(self.paths.atlas, "overwritten")
+        return sorted(os.listdir(d)) if os.path.isdir(d) else []
+
+    def test_first_write_and_unregistered_files_are_not_flagged(self):
+        out = []
+        notes.run(self.paths, log=out.append)
+        self.assertEqual(self.backups(), [])
+        self.assertFalse(any("手动改过" in line for line in out))
+        os.remove(os.path.join(self.paths.atlas, "blocks.json"))  # a vault from before the registry existed
+        path = self.paths.book_note("星海旅人")
+        self.edit_inside(path, "## ", "## 我改的标题 ")
+        notes.run(self.paths, log=quiet)
+        self.assertEqual(self.backups(), [])
+
+    def test_hand_edit_inside_block_is_backed_up_and_reported(self):
+        notes.run(self.paths, log=quiet)
+        path = self.paths.book_note("星海旅人")
+        self.edit_inside(path, "## ", "## 我改的标题 ")
+        out = []
+        notes.run(self.paths, log=out.append)
+        self.assertEqual(len(self.backups()), 1)
+        saved = self.read(os.path.join(self.paths.atlas, "overwritten", self.backups()[0]))
+        self.assertIn("我改的标题", saved)
+        self.assertNotIn("我改的标题", self.read(path))
+        self.assertTrue(any("1 处生成区块被手动改过" in line and "overwritten" in line for line in out))
+        notes.run(self.paths, log=quiet)  # the rewrite is now registered: no second backup
+        self.assertEqual(len(self.backups()), 1)
+
+    def test_data_change_alone_is_not_flagged(self):
+        notes.run(self.paths, log=quiet)
+        books = lib.read_json(self.paths.books_json)
+        books[0]["chapters"][0]["highlights"].append({"text": "新划的一句", "thought": None, "pos": 5000})
+        lib.write_json(self.paths.books_json, books)
+        out = []
+        notes.run(self.paths, log=out.append)
+        self.assertIn("新划的一句", self.note(books[0]["fileName"]))
+        self.assertEqual(self.backups(), [])
+
+    def test_topic_card_edit_is_backed_up(self):
+        self.write_topics(self.good_topics())
+        topics.run(self.paths, log=quiet)
+        path = self.paths.topic_card("耐心的复利")
+        self.edit_inside(path, "慢慢变好靠的是耐心和时间", "我自己改的结论")
+        out = []
+        topics.run(self.paths, log=out.append)
+        self.assertEqual(len(self.backups()), 1)
+        self.assertTrue(any("手动改过" in line for line in out))
+
+
 class DigestTest(Base):
     def test_top(self):
         files = digest.run(self.paths, top=2, log=quiet)

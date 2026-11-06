@@ -1,0 +1,10 @@
+schema_version: "1.1"
+name: update-remaining-books
+expected_outcome: |
+  An incremental run on a vault that already has topic cards for the first 50 books. Fetch only
+  rechecks what changed and leaves a config file behind. The remaining books are read in waves of
+  digests with topics.py run between waves, and are placed into existing or new topics, or given a
+  domain with assign. Existing topic names and one-line conclusions stay unless a reason is given,
+  new topics have related entries and no topic is isolated. Text the user wrote outside the
+  generated blocks survives untouched. The page is re-rendered without warnings and the final message
+  reports how many books remain outside topics.

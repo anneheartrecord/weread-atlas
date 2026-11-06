@@ -253,7 +253,7 @@ class TestData(RenderCase):
         self.assertEqual(names[-1], vault_read.UNSORTED)
         self.assertEqual(data["title"], "书房")
         self.assertEqual(len(data["stats"]["hourly"]), 24)
-        self.assertIn("书 12 本｜主题 5 个｜领域 3 个｜主题关系 4 条", summary)
+        self.assertIn("书 12 本｜主题 5 个｜领域 4 个，其中 3 个有主题画在环上｜主题关系 4 条", summary)
 
     def test_per_book_limits_and_card_text(self):
         data, _ = page_data(self.render()[0])

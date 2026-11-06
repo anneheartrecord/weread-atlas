@@ -47,7 +47,7 @@ def topics_from_frontmatter(fm):
     return [lib.unwikilink(v) for v in value if v]
 
 
-def write_book_note(paths, book, topics=None, domains=None):
+def write_book_note(paths, book, topics=None, domains=None, guard=None):
     """Write one book note. Returns 'created', 'updated' or 'unchanged'.
 
     topics / domains None: keep what the note already has (notes.py).
@@ -69,17 +69,20 @@ def write_book_note(paths, book, topics=None, domains=None):
             removes.append("主题")
     block = lib.render_book_block(book, topics)
     text = lib.merge_note(existing, block, sets, removes)
+    write = guard.write if guard else (lambda p, _old, t: lib.write_text_if_changed(p, t))
+    changed = write(path, existing, text)
     if existing is None:
-        lib.write_text_if_changed(path, text)
         return "created"
-    return "updated" if lib.write_text_if_changed(path, text) else "unchanged"
+    return "updated" if changed else "unchanged"
 
 
 def run(paths, log=print):
     books = lib.load_books(paths)
     counts = {"created": 0, "updated": 0, "unchanged": 0}
+    guard = lib.BlockGuard(paths)
     for b in books:
-        counts[write_book_note(paths, b)] += 1
+        counts[write_book_note(paths, b, guard=guard)] += 1
+    guard.save(log)
     log("书的笔记 %d 篇：新建 %d，更新 %d，未变化 %d（目录 %s）"
         % (len(books), counts["created"], counts["updated"], counts["unchanged"], paths.books_dir))
     known = {b["fileName"] + ".md" for b in books}

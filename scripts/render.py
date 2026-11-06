@@ -492,7 +492,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"书房页：{out}")
     cross = sum(1 for r in data["relations"] if r["cross"])
     reasoned = [r for r in data["relations"] if r["kind"] == "concept"]
-    print(f"书 {len(data['books'])} 本｜主题 {len(data['topics'])} 个｜领域 {mapped} 个｜"
+    domains_note = f"领域 {mapped} 个" if mapped == len(data["domains"]) else \
+        f"领域 {len(data['domains'])} 个，其中 {mapped} 个有主题画在环上"
+    print(f"书 {len(data['books'])} 本｜主题 {len(data['topics'])} 个｜{domains_note}｜"
           f"主题关系 {len(data['relations'])} 条，其中跨领域 {cross} 条｜{size_kb:.0f} KB")
     print(f"写了理由的关系 {len(reasoned)} 条（跨领域 {sum(1 for r in reasoned if r['cross'])} 条，脉络栏列出这些）；"
           f"只是共读的 {len(data['relations']) - len(reasoned)} 条，只在环上画虚线")

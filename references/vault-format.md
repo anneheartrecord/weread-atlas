@@ -18,6 +18,8 @@
     books.json         整理后的书目数据
     stats.json         阅读统计
     topics.json        agent 写的主题方案
+    blocks.json        每个生成区块上次写入时的指纹，用来发现区块里的手动改动
+    overwritten/       区块被手动改过时，重写前的原文备份
     digest/            给 agent 读的书目摘要
 ```
 

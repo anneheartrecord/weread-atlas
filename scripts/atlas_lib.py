@@ -9,6 +9,7 @@ Standard library only, Python 3.9+.
 
 import json
 import os
+import time
 import re
 import sys
 
@@ -47,6 +48,8 @@ class Paths(object):
         self.topics_dir = os.path.join(self.root, "主题")
         self.overview = os.path.join(self.root, "总览.md")
         self.shelf_dir = os.path.join(self.root, "书房")
+        self.blocks_json = os.path.join(self.atlas, "blocks.json")
+        self.overwritten_dir = os.path.join(self.atlas, "overwritten")
 
     def book_cache(self, book_id):
         return os.path.join(self.cache, "%s.json" % book_id)
@@ -480,6 +483,56 @@ def read_block(text):
     if e < 0:
         return None
     return text[b + len(BEGIN):e].strip("\n")
+
+
+class BlockGuard:
+    """Notices hand edits inside a generated block before the block is rewritten.
+
+    Every block a script writes is remembered as a hash in .atlas/blocks.json.
+    When the block found in a file no longer matches the remembered hash, someone
+    edited inside the markers: the whole file is copied to .atlas/overwritten/
+    before the rewrite, so nothing is lost silently. Files written before the
+    registry existed have no hash and are not checked.
+    """
+
+    def __init__(self, paths):
+        self.paths = paths
+        self.hashes = read_json(paths.blocks_json, {}) or {}
+        self.backups = []
+
+    @staticmethod
+    def _hash(block):
+        import hashlib
+        return hashlib.sha1((block or "").encode("utf-8")).hexdigest()
+
+    def _key(self, path):
+        return os.path.relpath(path, self.paths.root).replace(os.sep, "/")
+
+    def write(self, path, existing, text):
+        """Write `text` if it differs from `existing`, backing up a hand-edited block first.
+        Returns True when the file changed."""
+        key = self._key(path)
+        old_block, new_block = read_block(existing), read_block(text)
+        known = self.hashes.get(key)
+        if (existing is not None and old_block is not None and known is not None
+                and self._hash(old_block) != known and old_block != new_block):
+            os.makedirs(self.paths.overwritten_dir, exist_ok=True)
+            stamp = time.strftime("%Y%m%d-%H%M%S")
+            name = "%s-%s.md" % (key.replace("/", "__")[:-3] if key.endswith(".md") else key.replace("/", "__"), stamp)
+            with open(os.path.join(self.paths.overwritten_dir, name), "w", encoding="utf-8", newline="") as f:
+                f.write(existing)
+            self.backups.append(key)
+        changed = write_text_if_changed(path, text)
+        if new_block is not None:
+            self.hashes[key] = self._hash(new_block)
+        return changed
+
+    def save(self, log=None):
+        write_json(self.paths.blocks_json, self.hashes)
+        if self.backups and log:
+            log("%d 处生成区块被手动改过，已按数据重写，改动前的原文备份在 %s：%s。"
+                "要长期保留的内容请写到标记外面，主题卡片的结论和观点请改 .atlas/topics.json。"
+                % (len(self.backups), self.paths.overwritten_dir, "、".join(self.backups)))
 
 
 def merge_note(existing, block_inner, set_fields=None, remove_fields=()):

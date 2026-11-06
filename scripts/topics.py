@@ -428,6 +428,7 @@ def run(paths, check_only=False, log=print):
     book_domains = {f: [d for d in domains if d in ds] for f, ds in book_domains.items()}
 
     related = relations(topics, log=log)
+    guard = lib.BlockGuard(paths)
     cards = {"created": 0, "updated": 0, "unchanged": 0}
     for t in topics:
         tb = topic_books[t["name"]]
@@ -441,17 +442,19 @@ def run(paths, check_only=False, log=print):
         path = paths.topic_card(t["name"])
         existing = lib.read_text(path)
         text = lib.merge_note(existing, render_card(t, thoughts, highlights, resolve, related[t["name"]]), fields)
-        changed = lib.write_text_if_changed(path, text)
+        changed = guard.write(path, existing, text)
         cards["created" if existing is None else ("updated" if changed else "unchanged")] += 1
 
     notes = {"created": 0, "updated": 0, "unchanged": 0}
     for b in books:
         f = b["fileName"]
-        notes[write_book_note(paths, b, topics=book_topics.get(f, []), domains=book_domains.get(f, []))] += 1
+        notes[write_book_note(paths, b, topics=book_topics.get(f, []), domains=book_domains.get(f, []), guard=guard)] += 1
 
     stats = lib.read_json(paths.stats_json)
     overview = render_overview(stats, books, domains, topics, topic_books, book_domains)
-    lib.write_text_if_changed(paths.overview, lib.merge_note(lib.read_text(paths.overview), overview, {}))
+    old_overview = lib.read_text(paths.overview)
+    guard.write(paths.overview, old_overview, lib.merge_note(old_overview, overview, {}))
+    guard.save(log)
 
     log("主题卡片 %d 张：新建 %d，更新 %d，未变化 %d；主题之间的关系 %d 条"
         % (len(topics), cards["created"], cards["updated"], cards["unchanged"], sum(len(v) for v in related.values()) // 2))
