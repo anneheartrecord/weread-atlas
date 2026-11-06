@@ -242,3 +242,13 @@ class DisplayTitleTest(unittest.TestCase):
         self.assertEqual(display_title("原则.epub"), "原则")
         self.assertEqual(display_title("人类简史（中信版）"), "人类简史（中信版）")
         self.assertEqual(clean_title("时间游戏 (周洛华) (z-library.sk, 1lib.sk, z-lib.sk)"), "时间游戏")
+
+
+class MarkdownEscapeTest(unittest.TestCase):
+    def test_tag_like_text_round_trips(self):
+        from atlas_lib import md_text, md_unescape
+        raw = "用 /proc/<pid>/mountinfo 查看，<br/> 是自闭合标签，a < b 不变"
+        written = md_text(raw)
+        self.assertIn("\\<pid>", written)
+        self.assertIn("a < b", written)
+        self.assertEqual(md_unescape(written), raw)

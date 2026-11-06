@@ -125,6 +125,19 @@ def die(msg, code=1):
     sys.exit(code)
 
 
+_TAG_START = re.compile(r"<(?=[A-Za-z/!])")
+
+
+def md_text(text):
+    """One line of note text, with tag-like `<` escaped so Obsidian shows `<pid>` and `<br/>` as written."""
+    return _TAG_START.sub(r"\\<", one_line(text))
+
+
+def md_unescape(text):
+    """Inverse of md_text's escaping, for readers of generated blocks."""
+    return (text or "").replace("\\<", "<")
+
+
 def one_line(text):
     """Keep text verbatim except that line breaks become spaces."""
     if text is None:
@@ -531,17 +544,17 @@ def render_book_block(book, topic_names):
             continue
         lines = ["## " + (one_line(ch.get("title")) or UNKNOWN_CHAPTER), ""]
         for h in hls:
-            lines.append("- " + one_line(h.get("text")))
+            lines.append("- " + md_text(h.get("text")))
             for t in thought_lines(h.get("thought")):
-                lines.append("  - 💭 " + t)
+                lines.append("  - 💭 " + md_text(t))
         parts.append("\n".join(lines))
     orphans = [o for o in book.get("orphanThoughts", []) if one_line(o.get("text"))]
     if orphans:
         lines = ["## " + ORPHAN_SECTION, ""]
         for o in orphans:
-            lines.append("- 💭 " + one_line(o.get("text")))
+            lines.append("- 💭 " + md_text(o.get("text")))
             if one_line(o.get("quote")):
-                lines.append("  > " + one_line(o.get("quote")))
+                lines.append("  > " + md_text(o.get("quote")))
         parts.append("\n".join(lines))
     return "\n\n".join(parts)
 

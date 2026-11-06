@@ -196,12 +196,12 @@ def source_links(names, resolve):
 
 
 def render_card(topic, thoughts, highlights, resolve):
-    parts = ["## 一句话结论\n\n" + lib.one_line(topic["oneLiner"])]
+    parts = ["## 一句话结论\n\n" + lib.md_text(topic["oneLiner"])]
     lines = ["## 核心观点", ""]
     for i, v in enumerate(topic["viewpoints"], 1):
-        line = "%d. **%s**" % (i, lib.one_line(v["claim"]))
+        line = "%d. **%s**" % (i, lib.md_text(v["claim"]))
         if lib.one_line(v.get("text")):
-            line += "：" + lib.one_line(v.get("text"))
+            line += "：" + lib.md_text(v.get("text"))
         src = source_links(v.get("books"), resolve)
         if src:
             line += " —— " + src
@@ -209,13 +209,13 @@ def render_card(topic, thoughts, highlights, resolve):
     parts.append("\n".join(lines))
     lines = ["## 我的想法", ""]
     for _, _, fname, (text, quote) in thoughts:
-        lines.append("- %s —— %s" % (text, lib.wikilink(fname)))
+        lines.append("- %s —— %s" % (lib.md_text(text), lib.wikilink(fname)))
         if quote:
-            lines.append("  > " + quote)
+            lines.append("  > " + lib.md_text(quote))
     parts.append("\n".join(lines).rstrip())
     lines = ["## 代表划线", ""]
     for _, _, fname, text in highlights:
-        lines.append("- %s —— %s" % (text, lib.wikilink(fname)))
+        lines.append("- %s —— %s" % (lib.md_text(text), lib.wikilink(fname)))
     parts.append("\n".join(lines).rstrip())
     return "\n\n".join(parts)
 

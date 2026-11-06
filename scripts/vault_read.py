@@ -167,7 +167,7 @@ def parse_book_block(block: str) -> Dict[str, Any]:
     cur: Optional[Dict[str, Any]] = None
     in_orphans = False
     last = None
-    for raw in block.split("\n"):
+    for raw in atlas_lib.md_unescape(block).split("\n"):
         line = raw.rstrip()
         if not line.strip():
             continue
@@ -268,7 +268,7 @@ def read_book(path: Path, warnings: List[str]) -> Optional[Dict[str, Any]]:
 
 
 def parse_topic_block(block: str) -> Dict[str, Any]:
-    secs = _sections(block)
+    secs = _sections(atlas_lib.md_unescape(block))
 
     one = " ".join(l.strip() for l in _section(secs, "一句话结论") if l.strip() and not l.strip().startswith("<!--"))
     one = one.lstrip("> ").strip()
