@@ -171,6 +171,13 @@ def build_page_data(vault: Dict[str, Any]) -> Dict[str, Any]:
     hidden = set(vault["config"].get("hideBooks") or [])
     books = [b for b in vault["books"] if b["file"] not in hidden]
     topics = vault["topics"]
+    # Domain totals are recounted over the shown books, so a hidden book leaves no trace
+    # in a domain's count or hours.
+    domains = []
+    for d in vault["domains"]:
+        dbooks = [b for b in books if d["name"] in b["domains"]]
+        if dbooks or d["topics"]:
+            domains.append(dict(d, books=len(dbooks), hours=round(sum(b["hours"] for b in dbooks), 1)))
     book_idx = {b["file"]: i for i, b in enumerate(books)}
     title_idx = {b["title"]: i for i, b in enumerate(books)}
     topic_idx = {t["name"]: i for i, t in enumerate(topics)}
@@ -239,12 +246,12 @@ def build_page_data(vault: Dict[str, Any]) -> Dict[str, Any]:
         "title": str(vault["config"].get("title") or DEFAULT_TITLE),
         "generatedAt": (stats or {}).get("generatedAt", ""),
         "stats": stats,
-        "domains": vault["domains"],
+        "domains": domains,
         "topics": page_topics,
         "books": page_books,
         "relations": relations,
         "veins": veins_overview(relations),
-        "ring": ring_layout(page_topics, vault["domains"], relations),
+        "ring": ring_layout(page_topics, domains, relations),
     }
 
 
@@ -499,9 +506,18 @@ def main(argv: Optional[List[str]] = None) -> int:
         domains_note += f"，另有 {unsorted} 本书没有分到领域"
     print(f"书房页：{out}")
     reasoned = [r for r in data["relations"] if r["kind"] == "concept"]
+    cross = sum(1 for r in reasoned if r["cross"])
+    co_read = len(data["relations"]) - len(reasoned)
     print(f"书 {len(data['books'])} 本｜主题 {len(data['topics'])} 个｜{domains_note}｜{size_kb:.0f} KB")
-    print(f"写了理由的关系 {len(reasoned)} 条，其中跨领域 {sum(1 for r in reasoned if r['cross'])} 条，脉络栏列出这些；"
-          f"另有只是共读的 {len(data['relations']) - len(reasoned)} 条，只在环上画虚线")
+    # Mirrors veins_overview: cross-domain relations when there are any, else every reasoned one.
+    if cross:
+        panel = f"其中跨领域 {cross} 条，脉络栏列出这些"
+    elif reasoned:
+        panel = "没有跨领域的，脉络栏列出这些同领域的关系"
+    else:
+        panel = "脉络栏是空的"
+    print(f"写了理由的关系 {len(reasoned)} 条，{panel}"
+          + (f"；另有只是共读的 {co_read} 条，只在环上画虚线" if co_read else ""))
     if warnings:
         print(f"警告 {len(warnings)} 条：")
         for w in warnings:

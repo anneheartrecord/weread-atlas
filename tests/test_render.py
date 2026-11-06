@@ -258,6 +258,33 @@ class TestData(RenderCase):
         unsorted = data["domains"][-1]["books"]
         self.assertIn("书 12 本｜主题 5 个｜领域 3 个，另有 %d 本书没有分到领域｜" % unsorted, summary)
 
+    def test_hidden_books_leave_no_trace_in_domain_counts(self):
+        _, before = self.render()
+        self.assertIn("另有 1 本书没有分到领域", before)
+        data, _ = page_data(self.render()[0])
+        unsorted = [b for b in data["books"] if b["domains"] == [vault_read.UNSORTED]]
+        files = [f.stem for f in (self.root / "书").glob("*.md")
+                 if ("书名: " + unsorted[0]["title"]) in f.read_text(encoding="utf-8")]
+        cfg_path = self.root / ".atlas" / "config.json"
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+        cfg["hideBooks"] = files
+        cfg_path.write_text(json.dumps(cfg, ensure_ascii=False), encoding="utf-8")
+        html, after = self.render()
+        self.assertNotIn("没有分到领域", after)
+        data, _ = page_data(html)
+        self.assertNotIn(vault_read.UNSORTED, [d["name"] for d in data["domains"]])
+        self.assertEqual(sum(d["books"] for d in data["domains"]) >= len(data["books"]), True)
+
+    def test_summary_names_what_the_panel_lists_without_cross_domain_relations(self):
+        for name, drop in (("清晰写作", "风险与生存"), ("复利与耐心", "习惯的设计"), ("习惯的设计", "复利与耐心")):
+            p = self.root / "主题" / (name + ".md")
+            p.write_text(re.sub(r"- \[\[%s\]\]：[^\n]*\n" % drop, "", p.read_text(encoding="utf-8")), encoding="utf-8")
+        html, summary = self.render()
+        self.assertIn("没有跨领域的，脉络栏列出这些同领域的关系", summary)
+        self.assertNotIn("跨领域 0 条", summary)
+        data, _ = page_data(html)
+        self.assertEqual(data["veins"]["kicker"], "主题之间的脉络")
+
     def test_per_book_limits_and_card_text(self):
         data, _ = page_data(self.render()[0])
         for b in data["books"]:

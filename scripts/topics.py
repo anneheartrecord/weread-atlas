@@ -137,6 +137,11 @@ def validate(data, books):
         _check_related(t, label, names, errors, warnings)
 
     _check_isolated(topics, names, data.get("domains") or [], errors, warnings)
+    assigned = set((data.get("assign") or {}).values()) if isinstance(data.get("assign"), dict) else set()
+    for d in domains:
+        if d not in assigned and not any(isinstance(t, dict) and t.get("domain") == d for t in topics):
+            warnings.append("领域「%s」下没有主题，也没有用 assign 指定的书，总览和书房页上都不会出现它，"
+                            "领域数也不算它；用不上就从 domains 里删掉" % d)
 
     assign = data.get("assign", {})
     if not isinstance(assign, dict):
@@ -199,7 +204,13 @@ def _check_isolated(topics, names, domains, errors, warnings):
     domain_of = {t["name"]: t.get("domain") for t in topics if isinstance(t, dict) and t.get("name") in names}
     used = {domain_of[n] for n in names}
     if len(used) > 1 and pairs and not any(domain_of[a] != domain_of[b] for a, b in pairs):
-        warnings.append("没有一条跨领域的关系，书房页旁边的脉络栏会是空的；确认确实找不到真实的跨领域联系再继续")
+        warnings.append("没有一条跨领域的关系，书房页旁边的脉络栏只能列同领域的关系；确认确实找不到真实的跨领域联系再继续")
+
+
+def used_domains(data):
+    """Domains that hold a topic or an assigned book, the ones the overview and the page show."""
+    assigned = set((data.get("assign") or {}).values())
+    return [d for d in data["domains"] if d in assigned or any(t["domain"] == d for t in data["topics"])]
 
 
 def relation_candidates(topics, books, limit=MAX_CANDIDATES):
@@ -362,8 +373,11 @@ def render_overview(stats, books, domains, topics, topic_books, book_domains):
                         stats.get("readBooks", 0), stats.get("finishedBooks", 0), stats.get("notes", 0)))
     placed = sum(1 for b in books if book_domains.get(b["fileName"]))
     in_topics = len({b["fileName"] for bs in topic_books.values() for b in bs})
-    parts.append("书脉收录有笔记的书 %d 本：%d 本归入了主题，%d 本分到了领域，还有 %d 本不在任何主题里。"
-                 % (len(books), in_topics, placed, len(books) - in_topics))
+    if in_topics < len(books):
+        parts.append("书脉收录有笔记的书 %d 本：%d 本归入了主题，%d 本分到了领域，还有 %d 本不在任何主题里。"
+                     % (len(books), in_topics, placed, len(books) - in_topics))
+    else:
+        parts.append("书脉收录有笔记的书 %d 本，全部归入了主题。" % len(books))
     for d in domains:
         dbooks = [b for b in books if d in book_domains.get(b["fileName"], [])]
         hours = round(sum(b.get("hours") or 0 for b in dbooks), 1)
@@ -399,7 +413,7 @@ def run(paths, check_only=False, log=print):
             _log_candidates(data["topics"], books, log)
         return 1
     if check_only:
-        log("topics.json 校验通过：%d 个领域，%d 个主题。" % (len(data["domains"]), len(data["topics"])))
+        log("topics.json 校验通过：%d 个领域，%d 个主题。" % (len(used_domains(data)), len(data["topics"])))
         _log_candidates(data["topics"], books, log)
         return 0
 
@@ -430,34 +444,38 @@ def run(paths, check_only=False, log=print):
     related = relations(topics, log=log)
     guard = lib.BlockGuard(paths)
     cards = {"created": 0, "updated": 0, "unchanged": 0}
-    for t in topics:
-        tb = topic_books[t["name"]]
-        thoughts, highlights = pick_for_topic(t, tb, cfg.get("exclude") or [])
-        fields = {
-            "主题": t["name"],
-            "领域": t["domain"],
-            "书目": [lib.wikilink(b["fileName"]) for b in tb],
-            "时长": float(round(sum(b.get("hours") or 0 for b in tb), 1)),
-        }
-        path = paths.topic_card(t["name"])
-        existing = lib.read_text(path)
-        text = lib.merge_note(existing, render_card(t, thoughts, highlights, resolve, related[t["name"]]), fields)
-        changed = guard.write(path, existing, text)
-        cards["created" if existing is None else ("updated" if changed else "unchanged")] += 1
-
     notes = {"created": 0, "updated": 0, "unchanged": 0}
-    for b in books:
-        f = b["fileName"]
-        notes[write_book_note(paths, b, topics=book_topics.get(f, []), domains=book_domains.get(f, []), guard=guard)] += 1
+    try:
+        for t in topics:
+            tb = topic_books[t["name"]]
+            thoughts, highlights = pick_for_topic(t, tb, cfg.get("exclude") or [])
+            fields = {
+                "主题": t["name"],
+                "领域": t["domain"],
+                "书目": [lib.wikilink(b["fileName"]) for b in tb],
+                "时长": float(round(sum(b.get("hours") or 0 for b in tb), 1)),
+            }
+            path = paths.topic_card(t["name"])
+            existing = lib.read_text(path)
+            text = lib.merge_note(existing, render_card(t, thoughts, highlights, resolve, related[t["name"]]), fields)
+            changed = guard.write(path, existing, text)
+            cards["created" if existing is None else ("updated" if changed else "unchanged")] += 1
 
-    stats = lib.read_json(paths.stats_json)
-    overview = render_overview(stats, books, domains, topics, topic_books, book_domains)
-    old_overview = lib.read_text(paths.overview)
-    guard.write(paths.overview, old_overview, lib.merge_note(old_overview, overview, {}))
-    guard.save(log)
+        for b in books:
+            f = b["fileName"]
+            notes[write_book_note(paths, b, topics=book_topics.get(f, []), domains=book_domains.get(f, []), guard=guard)] += 1
 
-    log("主题卡片 %d 张：新建 %d，更新 %d，未变化 %d；主题之间的关系 %d 条"
-        % (len(topics), cards["created"], cards["updated"], cards["unchanged"], sum(len(v) for v in related.values()) // 2))
+        stats = lib.read_json(paths.stats_json)
+        overview = render_overview(stats, books, domains, topics, topic_books, book_domains)
+        old_overview = lib.read_text(paths.overview)
+        guard.write(paths.overview, old_overview, lib.merge_note(old_overview, overview, {}))
+    finally:
+        # Saved even when the run stops partway, so the files it did write keep their fingerprints.
+        guard.save(log)
+
+    log("领域 %d 个；主题卡片 %d 张：新建 %d，更新 %d，未变化 %d；主题之间的关系 %d 条"
+        % (len(used_domains(data)), len(topics), cards["created"], cards["updated"], cards["unchanged"],
+           sum(len(v) for v in related.values()) // 2))
     log("书的笔记 %d 篇：新建 %d，更新 %d，未变化 %d；归入主题 %d 本，分到领域 %d 本"
         % (len(books), notes["created"], notes["updated"], notes["unchanged"], len(book_topics),
            sum(1 for v in book_domains.values() if v)))

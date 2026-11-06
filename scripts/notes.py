@@ -80,9 +80,13 @@ def run(paths, log=print):
     books = lib.load_books(paths)
     counts = {"created": 0, "updated": 0, "unchanged": 0}
     guard = lib.BlockGuard(paths)
-    for b in books:
-        counts[write_book_note(paths, b, guard=guard)] += 1
-    guard.save(log)
+    try:
+        for b in books:
+            counts[write_book_note(paths, b, guard=guard)] += 1
+    finally:
+        # Saved even when the run stops partway, so the notes it did write keep their
+        # fingerprints and a later hand edit to them is still caught.
+        guard.save(log)
     log("书的笔记 %d 篇：新建 %d，更新 %d，未变化 %d（目录 %s）"
         % (len(books), counts["created"], counts["updated"], counts["unchanged"], paths.books_dir))
     known = {b["fileName"] + ".md" for b in books}

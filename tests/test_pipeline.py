@@ -7,6 +7,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -106,6 +107,30 @@ class BlockGuardTest(Base):
     def backups(self):
         d = os.path.join(self.paths.atlas, "overwritten")
         return sorted(os.listdir(d)) if os.path.isdir(d) else []
+
+    def test_interrupted_run_keeps_fingerprints_of_what_it_wrote(self):
+        real = notes.write_book_note
+        calls = []
+
+        def dies_on_second(*a, **k):
+            calls.append(1)
+            if len(calls) == 2:
+                raise KeyboardInterrupt
+            return real(*a, **k)
+
+        with mock.patch.object(notes, "write_book_note", dies_on_second), self.assertRaises(KeyboardInterrupt):
+            notes.run(self.paths, log=quiet)
+        saved = lib.read_json(self.paths.blocks_json)
+        self.assertEqual(len(saved), 1)
+        written = [n for n in os.listdir(self.paths.books_dir)]
+        self.assertEqual(len(written), 1)
+        path = os.path.join(self.paths.books_dir, written[0])
+        self.edit_inside(path, "## ", "## 我改的标题 ")
+        lib.write_json(self.paths.blocks_json, saved)
+        out = []
+        notes.run(self.paths, log=out.append)
+        self.assertEqual(len(self.backups()), 1)
+        self.assertTrue(any("手动改过" in line for line in out))
 
     def test_first_write_and_unregistered_files_are_not_flagged(self):
         out = []
@@ -218,6 +243,18 @@ class DigestTest(Base):
 
 
 class TopicsTest(Base):
+    def test_domain_without_topics_or_books_is_flagged_and_not_counted(self):
+        data = self.good_topics()
+        data["domains"].append("历史")
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, check_only=True, log=out.append), 0)
+        self.assertTrue(any("领域「历史」下没有主题" in line for line in out))
+        self.assertTrue(any("2 个领域" in line for line in out))
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 0)
+        self.assertTrue(any(line.startswith("领域 2 个；主题卡片 1 张") for line in out))
+
     def test_validation_lists_all_errors_and_writes_nothing(self):
         bad = self.good_topics()
         bad["topics"][0]["domain"] = "不存在"
