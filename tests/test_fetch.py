@@ -325,6 +325,13 @@ class FetchTest(unittest.TestCase):
                     mock.patch("sys.stderr", io.StringIO()) as err, mock.patch("sys.stdout", io.StringIO()):
                 self.assertEqual(fetch.main(["--root", self.dir]), 1)
             self.assertIn("重跑同一条命令会从这里接着拉", err.getvalue())
+            self.assertIn("网络或代理断了", err.getvalue())
+            # HTTP 499 means another caller, not a dead network
+            with self.assertRaises(fetch.NetworkDown) as ctx:
+                self.run_fetch(Flaky(w, set(order), lambda m: weread_client.RetriesExhausted(
+                    "/book/info 连续 5 次失败，最后一次：HTTP 499")))
+            self.assertIn("同时调微信读书接口", str(ctx.exception))
+            self.assertIn("HTTP 499", str(ctx.exception))
 
     def test_upgrade_info_stops_with_exit_3(self):
         c = fx.FakeClient(fx.default_world(), upgrade_on=("/book/info", "1004"))

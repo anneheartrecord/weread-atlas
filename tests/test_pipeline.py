@@ -254,6 +254,27 @@ class TopicsTest(Base):
         out = []
         self.assertEqual(topics.run(self.paths, log=out.append), 0)
         self.assertTrue(any(line.startswith("领域 2 个；主题卡片 1 张") for line in out))
+        self.assertNotIn("## 历史", self.read(self.paths.overview))
+
+    def test_assign_value_must_be_a_domain_name(self):
+        data = self.good_topics()
+        data["assign"] = {"星海旅人": ["小说"]}
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, check_only=True, log=out.append), 1)
+        self.assertTrue(any("assign 的值要写一个领域名" in line for line in out))
+
+    def test_assign_for_a_book_already_in_a_topic_is_flagged_and_not_counted(self):
+        data = self.good_topics()
+        data["domains"].append("历史")
+        data["assign"]["复利花园"] = "历史"
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 0)
+        self.assertTrue(any("「复利花园」已经在主题里" in line for line in out))
+        self.assertTrue(any("领域「历史」下没有主题" in line for line in out))
+        self.assertTrue(any(line.startswith("领域 2 个；") for line in out))
+        self.assertNotIn("## 历史", self.read(self.paths.overview))
 
     def test_validation_lists_all_errors_and_writes_nothing(self):
         bad = self.good_topics()

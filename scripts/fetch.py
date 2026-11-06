@@ -378,7 +378,7 @@ def run(paths, client, full=False, today=None, log=print):
 
     shelf = {} if full else fetch_shelf_state(client, log)
     raws = []
-    dead = 0  # books in a row lost to RetriesExhausted
+    dead, last_dead = 0, ""  # books in a row lost to RetriesExhausted, and the last such error
     report("books")
     for n, nb in enumerate(notebooks, 1):
         bid = str(nb.get("bookId"))
@@ -396,7 +396,7 @@ def run(paths, client, full=False, today=None, log=print):
                 except UpgradeRequired:
                     raise
                 except WereadError as e:
-                    dead = dead + 1 if isinstance(e, RetriesExhausted) else 0
+                    dead, last_dead = (dead + 1, str(e)) if isinstance(e, RetriesExhausted) else (0, "")
                     failed.append("%s（%s）进度没刷新，笔记保留上次的进度：%s" % ((nb.get("book") or {}).get("title", ""), bid, e))
             raws.append(cached)
         else:
@@ -411,7 +411,7 @@ def run(paths, client, full=False, today=None, log=print):
             except UpgradeRequired:
                 raise
             except WereadError as e:
-                dead = dead + 1 if isinstance(e, RetriesExhausted) else 0
+                dead, last_dead = (dead + 1, str(e)) if isinstance(e, RetriesExhausted) else (0, "")
                 title = (nb.get("book") or {}).get("title", "")
                 if cached:
                     failed.append("%s（%s）没拉到新内容，笔记保留上次的内容：%s" % (title, bid, e))
@@ -421,9 +421,12 @@ def run(paths, client, full=False, today=None, log=print):
                     missing.append("%s（%s）" % (title, bid))
         report("books", n)
         if dead >= MAX_DEAD_BOOKS:
-            raise NetworkDown("连续 %d 本书的请求都在重试后失败，多半是网络或代理断了，先停在第 %d/%d 本。"
-                              "已经拉到的书都缓存着，网络恢复后重跑同一条命令会从这里接着拉。"
-                              % (dead, n, len(notebooks)))
+            busy = "HTTP 499" in last_dead or "HTTP 429" in last_dead
+            hint = ("HTTP 499 或 429 多半是还有别的程序在同时调微信读书接口，停掉它再重跑" if busy
+                    else "多半是网络或代理断了，网络恢复后再重跑")
+            raise NetworkDown("连续 %d 本书的请求都在重试后失败，先停在第 %d/%d 本（最后一次：%s）。%s；"
+                              "已经拉到的书都缓存着，重跑同一条命令会从这里接着拉。"
+                              % (dead, n, len(notebooks), last_dead, hint))
         if n % PROGRESS_EVERY == 0 or n == len(notebooks):
             log("  书目 %d/%d：新拉取 %d，未变化跳过 %d（其中刷新进度 %d），失败 %d"
                 % (n, len(notebooks), fetched, skipped, refreshed, len(failed)))

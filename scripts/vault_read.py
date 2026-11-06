@@ -246,7 +246,8 @@ def read_book(path: Path, warnings: List[str]) -> Optional[Dict[str, Any]]:
     return {
         "file": path.stem,
         "title": title,
-        "author": as_text(fm.get("作者")),
+        # Notes written before display_author existed may still carry a generator name.
+        "author": atlas_lib.display_author(as_text(fm.get("作者")), as_text(fm.get("bookId"))),
         "bookId": as_text(fm.get("bookId")),
         "category": as_text(fm.get("分类")),
         "progress": int(max(0, min(100, progress))),

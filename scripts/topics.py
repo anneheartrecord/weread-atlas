@@ -137,21 +137,25 @@ def validate(data, books):
         _check_related(t, label, names, errors, warnings)
 
     _check_isolated(topics, names, data.get("domains") or [], errors, warnings)
-    assigned = set((data.get("assign") or {}).values()) if isinstance(data.get("assign"), dict) else set()
+    used = set(used_domains(data, books))
     for d in domains:
-        if d not in assigned and not any(isinstance(t, dict) and t.get("domain") == d for t in topics):
-            warnings.append("领域「%s」下没有主题，也没有用 assign 指定的书，总览和书房页上都不会出现它，"
+        if d not in used:
+            warnings.append("领域「%s」下没有主题，也没有只靠 assign 分到这里的书，总览和书房页上都不会出现它，"
                             "领域数也不算它；用不上就从 domains 里删掉" % d)
 
     assign = data.get("assign", {})
     if not isinstance(assign, dict):
         errors.append("assign 必须是对象")
     else:
+        in_topics = _topic_files(data, resolve)
         for b, d in assign.items():
-            if resolve(b) is None:
+            found = resolve(b)
+            if found is None:
                 errors.append("assign 里的书名找不到：%s%s" % (b, _suggest(b, books)))
-            if d not in domains:
-                errors.append("assign 里「%s」的领域「%s」不在 domains 里" % (b, d))
+            if not _is_text(d) or d not in domains:
+                errors.append("assign 里「%s」的领域「%s」不在 domains 里，assign 的值要写一个领域名" % (b, d))
+            elif found is not None and found["fileName"] in in_topics:
+                warnings.append("assign 里的「%s」已经在主题里，它的领域按所在主题算，这条 assign 不会生效" % b)
     return errors, warnings
 
 
@@ -207,10 +211,31 @@ def _check_isolated(topics, names, domains, errors, warnings):
         warnings.append("没有一条跨领域的关系，书房页旁边的脉络栏只能列同领域的关系；确认确实找不到真实的跨领域联系再继续")
 
 
-def used_domains(data):
-    """Domains that hold a topic or an assigned book, the ones the overview and the page show."""
-    assigned = set((data.get("assign") or {}).values())
-    return [d for d in data["domains"] if d in assigned or any(t["domain"] == d for t in data["topics"])]
+def _topic_files(data, resolve):
+    """File names of the books listed in any topic; tolerates a topics.json that fails validation."""
+    files = set()
+    for t in data.get("topics") or []:
+        if isinstance(t, dict) and isinstance(t.get("books"), list):
+            for n in t["books"]:
+                b = resolve(n) if _is_text(n) else None
+                if b is not None:
+                    files.add(b["fileName"])
+    return files
+
+
+def used_domains(data, books):
+    """Domains the overview and the page show: the ones holding a topic, or a book that
+    `assign` places there and that is in no topic (assign never moves a book out of its topics)."""
+    resolve = resolver(books)
+    used = {t.get("domain") for t in data.get("topics") or [] if isinstance(t, dict)}
+    assign = data.get("assign") if isinstance(data.get("assign"), dict) else {}
+    in_topics = _topic_files(data, resolve)
+    for n, d in assign.items():
+        b = resolve(n) if _is_text(n) else None
+        if b is not None and b["fileName"] not in in_topics and _is_text(d):
+            used.add(d)
+    domains = data.get("domains") if isinstance(data.get("domains"), list) else []
+    return [d for d in domains if _is_text(d) and d in used]
 
 
 def relation_candidates(topics, books, limit=MAX_CANDIDATES):
@@ -380,9 +405,11 @@ def render_overview(stats, books, domains, topics, topic_books, book_domains):
         parts.append("书脉收录有笔记的书 %d 本，全部归入了主题。" % len(books))
     for d in domains:
         dbooks = [b for b in books if d in book_domains.get(b["fileName"], [])]
+        dtopics = [t for t in topics if t["domain"] == d]
+        if not dbooks and not dtopics:
+            continue  # an unused domain; validate() already warned about it
         hours = round(sum(b.get("hours") or 0 for b in dbooks), 1)
         lines = ["## " + d, "", "%d 本书，%s 小时。" % (len(dbooks), hours)]
-        dtopics = [t for t in topics if t["domain"] == d]
         if dtopics:
             lines.append("")
             for t in dtopics:
@@ -413,7 +440,7 @@ def run(paths, check_only=False, log=print):
             _log_candidates(data["topics"], books, log)
         return 1
     if check_only:
-        log("topics.json 校验通过：%d 个领域，%d 个主题。" % (len(used_domains(data)), len(data["topics"])))
+        log("topics.json 校验通过：%d 个领域，%d 个主题。" % (len(used_domains(data, books)), len(data["topics"])))
         _log_candidates(data["topics"], books, log)
         return 0
 
@@ -474,7 +501,7 @@ def run(paths, check_only=False, log=print):
         guard.save(log)
 
     log("领域 %d 个；主题卡片 %d 张：新建 %d，更新 %d，未变化 %d；主题之间的关系 %d 条"
-        % (len(used_domains(data)), len(topics), cards["created"], cards["updated"], cards["unchanged"],
+        % (len(used_domains(data, books)), len(topics), cards["created"], cards["updated"], cards["unchanged"],
            sum(len(v) for v in related.values()) // 2))
     log("书的笔记 %d 篇：新建 %d，更新 %d，未变化 %d；归入主题 %d 本，分到领域 %d 本"
         % (len(books), notes["created"], notes["updated"], notes["unchanged"], len(book_topics),

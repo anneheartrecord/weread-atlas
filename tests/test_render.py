@@ -285,6 +285,14 @@ class TestData(RenderCase):
         data, _ = page_data(html)
         self.assertEqual(data["veins"]["kicker"], "主题之间的脉络")
 
+    def test_generator_author_from_an_older_note_is_not_shown(self):
+        p = self.root / "书" / "第七个冬天.md"
+        t = p.read_text(encoding="utf-8").replace("作者: 何晚舟", "作者: python-docx").replace('bookId: "900002"', 'bookId: "CB_9"')
+        p.write_text(t, encoding="utf-8")
+        data, _ = page_data(self.render()[0])
+        book = [b for b in data["books"] if b["title"] == "第七个冬天"][0]
+        self.assertEqual(book["author"], "")
+
     def test_per_book_limits_and_card_text(self):
         data, _ = page_data(self.render()[0])
         for b in data["books"]:
