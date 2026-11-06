@@ -29,7 +29,7 @@ metadata:
 
 ## 首次运行
 
-1. **拉数据**：`python3 scripts/fetch.py --root ROOT`。几百本书需要 10 到 20 分钟，这是正常的，接口只能逐个调用。完成标准是打印出书数、划线数和想法数，`.atlas/books.json` 和 `.atlas/stats.json` 都已生成。
+1. **拉数据**：`python3 scripts/fetch.py --root ROOT`。几百本书需要 10 到 20 分钟，这是正常的，接口只能逐个调用。放到后台跑时把输出重定向到文件，每 25 本会打印一行进度。完成标准是打印出书数、划线数和想法数，`.atlas/books.json` 和 `.atlas/stats.json` 都已生成。
 
 2. **写书的笔记**：`python3 scripts/notes.py --root ROOT`。完成标准是 `书/` 下的篇数等于上一步的书数。
 

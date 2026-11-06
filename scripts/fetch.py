@@ -427,6 +427,10 @@ def main(argv=None):
     ap.add_argument("--full", action="store_true", help="忽略缓存，所有书重新拉取")
     ap.add_argument("--skill-version", help="手动指定 skill_version，默认从官方 weread skill 读取")
     args = ap.parse_args(argv)
+    # A full fetch runs for minutes, often in the background with output sent to a
+    # file; flush each progress line so the log shows where it is.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
     paths = lib.Paths(args.root)
     client = make_client(args)
     try:
