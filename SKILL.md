@@ -35,7 +35,7 @@ metadata:
 
 3. **出摘要**：`python3 scripts/digest.py --root ROOT --top 50`。先只取笔记最多的 50 本，让用户在半小时内看到一张像样的地图。用户要全部的书时，也先用这 50 本走完第 4、5 步，再按增量更新一节分批补进剩下的书，每批读完一轮 `--new` 的摘要，直到它报告没有新书。一次读几百本的摘要会撑满上下文，读到后面就开始漏。
 
-4. **归纳主题**：先读 [`references/topics-guide.md`](references/topics-guide.md)，再逐个读完 `.atlas/digest/` 下的全部摘要文件，一个都不跳。然后按指南写出领域和主题的方案草稿到 `.atlas/topics.json`，先跑一次 `python3 scripts/topics.py --root ROOT --check`：它会列出共读过同一批书的主题对，跨领域的排在前面，这是写 `related` 的线索。读过相关卡片的观点，判断哪些真的相连，每个主题补 2 到 5 条 `related`，`why` 说出连接两者的那个想法。再把方案连同关系整份列给用户确认一次，按用户的意见改好。完成标准是用户点头，摘要里的每一本书都出现在某个主题的 `books` 里或者 `assign` 里，并且每个主题都有 `related`。
+4. **归纳主题**：先读 [`references/topics-guide.md`](references/topics-guide.md)，再逐个读完 `.atlas/digest/` 下的全部摘要文件，一个都不跳。然后按指南写出领域和主题的方案草稿到 `.atlas/topics.json`，先跑一次 `python3 scripts/topics.py --root ROOT --check`：它会列出共读过同一批书的主题对，跨领域的排在前面，这是写 `related` 的线索。读过相关卡片的观点，判断哪些真的相连，每个主题补 2 到 5 条 `related`，`why` 说出连接两者的那个想法。再把方案连同关系整份列给用户确认一次，按用户的意见改好。完成标准是用户点头，摘要里的每一本书都出现在某个主题的 `books` 里或者 `assign` 里，并且每个主题都至少出现在一条关系里，写在哪一边都算。
 
 5. **写主题卡片**：`python3 scripts/topics.py --root ROOT`。校验报错时按提示改 `topics.json` 再跑，直到通过。主题有 4 个及以上时，任何一个主题没有关系都会报错，因为它在知识环上会是一个孤点。跑完它会打印还有多少本书不在任何主题里，汇报时要用到。
 

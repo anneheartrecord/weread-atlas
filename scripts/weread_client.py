@@ -49,6 +49,10 @@ class UpgradeRequired(WereadError):
     """The gateway asked for a skill upgrade. Callers must stop and exit 3."""
 
 
+class RetriesExhausted(WereadError):
+    """Every attempt at one call failed: the network or the gateway is down, not the request."""
+
+
 class ApiError(WereadError):
     def __init__(self, api, errcode, msg):
         WereadError.__init__(self, "%s 返回错误 %s：%s" % (api, errcode, msg))
@@ -181,7 +185,7 @@ class Client(object):
             self.retried += 1
             if attempt < self.retries - 1:
                 time.sleep(BACKOFF * (attempt + 1))
-        raise WereadError("%s 连续 %d 次失败，最后一次：%s" % (api, self.retries, last_err))
+        raise RetriesExhausted("%s 连续 %d 次失败，最后一次：%s" % (api, self.retries, last_err))
 
 
 def make_client(args):

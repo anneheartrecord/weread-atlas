@@ -290,6 +290,42 @@ class FetchTest(unittest.TestCase):
         self.run_fetch(fx.FakeClient(w))
         self.assertTrue(any("停在阅读统计" in line for line in self.out))
 
+    def test_stops_when_the_network_is_down_and_resumes_later(self):
+        w = fx.default_world()
+
+        class Flaky(fx.FakeClient):
+            def __init__(self, world, dead_ids, error):
+                fx.FakeClient.__init__(self, world)
+                self.dead_ids, self.error = dead_ids, error
+
+            def call(self, api, **p):
+                if api == "/book/info" and p.get("bookId") in self.dead_ids:
+                    raise self.error("%s 连续 5 次失败，最后一次：timed out" % api)
+                return fx.FakeClient.call(self, api, **p)
+
+        order = [nb["bookId"] for nb in sorted(w["notebooks"], key=lambda b: -b["sort"])]
+        with mock.patch.object(fetch, "MAX_DEAD_BOOKS", 2):
+            # two books in a row lost to the network: stop at the second
+            with self.assertRaises(fetch.NetworkDown):
+                self.run_fetch(Flaky(w, set(order[:2]), weread_client.RetriesExhausted))
+            report = lib.read_json(self.paths.fetch_report)
+            self.assertEqual((report["finished"], report["stage"], report["processed"]), (False, "books", 2))
+            self.assertEqual(len(report["missing"]), 2)
+
+            # a success in between resets the count; request errors never count
+            self.run_fetch(Flaky(w, {order[0], order[2]}, weread_client.RetriesExhausted))
+            self.assertTrue(lib.read_json(self.paths.fetch_report)["finished"])
+            shutil.rmtree(self.dir)
+            self.dir = tempfile.mkdtemp()
+            self.paths = lib.Paths(self.dir)
+            self.run_fetch(Flaky(w, set(order), lambda m: weread_client.ApiError("/book/info", -1, m)))
+            self.assertTrue(lib.read_json(self.paths.fetch_report)["finished"])
+
+            with mock.patch.object(fetch, "make_client", return_value=Flaky(w, set(order), weread_client.RetriesExhausted)), \
+                    mock.patch("sys.stderr", io.StringIO()) as err, mock.patch("sys.stdout", io.StringIO()):
+                self.assertEqual(fetch.main(["--root", self.dir]), 1)
+            self.assertIn("重跑同一条命令会从这里接着拉", err.getvalue())
+
     def test_upgrade_info_stops_with_exit_3(self):
         c = fx.FakeClient(fx.default_world(), upgrade_on=("/book/info", "1004"))
         with self.assertRaises(weread_client.UpgradeRequired):

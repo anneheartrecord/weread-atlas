@@ -27,13 +27,20 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import atlas_lib as lib  # noqa: E402
-from weread_client import UpgradeRequired, WereadError, make_client  # noqa: E402
+from weread_client import RetriesExhausted, UpgradeRequired, WereadError, make_client  # noqa: E402
 
 REVIEW_PAGE = 100
 MAX_REVIEW_PAGES = 100
 
 
 PROGRESS_EVERY = 25  # books per progress line
+# Books in a row whose calls all ran out of retries before the run stops: past this the
+# network is down, and each further book would only burn minutes of timeouts.
+MAX_DEAD_BOOKS = 5
+
+
+class NetworkDown(WereadError):
+    pass
 
 def _date(ts):
     if not ts:
@@ -273,7 +280,7 @@ def normalise_book(raw, hours_sec):
         "bookId": str(nb.get("bookId") or info.get("bookId")),
         "title": lib.display_title(info.get("title") or nbook.get("title") or ""),
         "fileName": None,
-        "author": info.get("author") or nbook.get("author") or "",
+        "author": lib.display_author(info.get("author") or nbook.get("author") or "", nb.get("bookId") or info.get("bookId")),
         "category": category,
         "cover": info.get("cover") or nbook.get("cover") or "",
         "link": info.get("readerLink") or nbook.get("readerLink") or info.get("deepLink") or nbook.get("deepLink") or None,
@@ -371,6 +378,7 @@ def run(paths, client, full=False, today=None, log=print):
 
     shelf = {} if full else fetch_shelf_state(client, log)
     raws = []
+    dead = 0  # books in a row lost to RetriesExhausted
     report("books")
     for n, nb in enumerate(notebooks, 1):
         bid = str(nb.get("bookId"))
@@ -384,9 +392,11 @@ def run(paths, client, full=False, today=None, log=print):
                     cached["shelfReadUpdateTime"], cached["shelfFinish"] = shelf[bid]
                     lib.write_json(cache_path, cached, indent=None)
                     refreshed += 1
+                    dead = 0
                 except UpgradeRequired:
                     raise
                 except WereadError as e:
+                    dead = dead + 1 if isinstance(e, RetriesExhausted) else 0
                     failed.append("%s（%s）进度没刷新，笔记保留上次的进度：%s" % ((nb.get("book") or {}).get("title", ""), bid, e))
             raws.append(cached)
         else:
@@ -397,9 +407,11 @@ def run(paths, client, full=False, today=None, log=print):
                 lib.write_json(cache_path, raw, indent=None)
                 raws.append(raw)
                 fetched += 1
+                dead = 0
             except UpgradeRequired:
                 raise
             except WereadError as e:
+                dead = dead + 1 if isinstance(e, RetriesExhausted) else 0
                 title = (nb.get("book") or {}).get("title", "")
                 if cached:
                     failed.append("%s（%s）没拉到新内容，笔记保留上次的内容：%s" % (title, bid, e))
@@ -408,6 +420,10 @@ def run(paths, client, full=False, today=None, log=print):
                     failed.append("%s（%s）没拉到，没有写进笔记：%s" % (title, bid, e))
                     missing.append("%s（%s）" % (title, bid))
         report("books", n)
+        if dead >= MAX_DEAD_BOOKS:
+            raise NetworkDown("连续 %d 本书的请求都在重试后失败，多半是网络或代理断了，先停在第 %d/%d 本。"
+                              "已经拉到的书都缓存着，网络恢复后重跑同一条命令会从这里接着拉。"
+                              % (dead, n, len(notebooks)))
         if n % PROGRESS_EVERY == 0 or n == len(notebooks):
             log("  书目 %d/%d：新拉取 %d，未变化跳过 %d（其中刷新进度 %d），失败 %d"
                 % (n, len(notebooks), fetched, skipped, refreshed, len(failed)))

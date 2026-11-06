@@ -119,9 +119,10 @@ def load_books(paths):
     books = read_json(paths.books_json)
     if books is None:
         die("找不到 %s，先运行 fetch.py" % paths.books_json)
-    # Titles cached before display_title existed still carry download-site noise.
+    # Books cached before display_title and display_author existed still carry the noise.
     for b in books:
         b["title"] = display_title(b.get("title"))
+        b["author"] = display_author(b.get("author"), b.get("bookId"))
     return books
 
 
@@ -190,7 +191,7 @@ def _strip_trailing_group(t):
 
 # Imported books often carry download-site tags, file extensions or numeric upload ids in their title.
 _SOURCE_TAG = re.compile(r"lib|z-?lib|libgen|anna|archive|www\.|\.(com|org|net|sk|io|cn)\b|epub|mobi|azw|pdf", re.I)
-_FILE_EXT = re.compile(r"\.(epub|mobi|azw3?|pdf|txt)$", re.I)
+_FILE_EXT = re.compile(r"\.(epub|mobi|azw3?|pdf|txt|docx?)$", re.I)
 _UPLOAD_ID = re.compile(r"^\d{6,}[-_ ]+")
 
 
@@ -203,6 +204,21 @@ def display_title(title):
             break
         t = stripped
     return t.strip() or (title or "").strip()
+
+
+# Author fields that imported files carry from the program or account that made them.
+# Matched whole, so a real author whose name merely contains one of these is kept.
+GENERATOR_AUTHORS = {"python-docx", "docx", "microsoft office user", "microsoft", "administrator", "admin",
+                     "wps", "word", "user", "unknown", "未知", "calibre"}
+
+
+def display_author(author, book_id=""):
+    """Author as shown to people; for the user's own imported files (bookId CB_…) a
+    generator name such as python-docx says nothing about the book, so it is dropped."""
+    a = (author or "").strip()
+    if str(book_id).startswith("CB_") and a.casefold() in GENERATOR_AUTHORS:
+        return ""
+    return a
 
 
 def clean_title(title):

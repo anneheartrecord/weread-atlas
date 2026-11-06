@@ -192,6 +192,22 @@ class Filenames(unittest.TestCase):
         self.assertEqual(lib.assign_filenames(books, {})["2"], "python（B）")
 
 
+class Authors(unittest.TestCase):
+    def test_generator_names_dropped_only_for_imported_books(self):
+        self.assertEqual(lib.display_author("python-docx", "CB_12"), "")
+        self.assertEqual(lib.display_author(" Microsoft Office User ", "CB_3"), "")
+        self.assertEqual(lib.display_author("python-docx", "3300012345"), "python-docx")
+        self.assertEqual(lib.display_author("Wordsworth", "CB_4"), "Wordsworth")  # whole-name match only
+        self.assertEqual(lib.display_author("瑞·达利欧", "CB_5"), "瑞·达利欧")
+
+    def test_cached_books_are_cleaned_on_load(self):
+        with tempfile.TemporaryDirectory() as d:
+            paths = lib.Paths(d)
+            lib.write_json(paths.books_json, [{"bookId": "CB_1", "title": "草稿.docx", "author": "python-docx"}])
+            b = lib.load_books(paths)[0]
+            self.assertEqual((b["title"], b["author"]), ("草稿", ""))
+
+
 class ConfigAndPaths(unittest.TestCase):
     def test_config_defaults_and_save(self):
         with tempfile.TemporaryDirectory() as d:
