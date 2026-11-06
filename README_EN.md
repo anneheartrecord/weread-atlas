@@ -22,7 +22,7 @@ your-vault/微信读书/
 
 - Open Obsidian's graph view and books and topics form one network.
 
-- Topics are drawn from your own notes, not from a fixed taxonomy. The first run covers the 50 books with the most notes, so a map appears within minutes. The remaining books can be added in batches.
+- Topics are drawn from your own notes, not from a fixed taxonomy. The first run covers the 50 books with the most notes, so an account with a few hundred books gets its map in about half an hour: roughly 10 minutes to fetch and 15 to work out topics. The remaining books can be added in batches.
 
 - Re-runs only rewrite the generated block. Anything else you write in a note stays where it is.
 

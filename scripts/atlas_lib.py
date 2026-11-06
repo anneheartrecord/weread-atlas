@@ -117,6 +117,9 @@ def load_books(paths):
     books = read_json(paths.books_json)
     if books is None:
         die("找不到 %s，先运行 fetch.py" % paths.books_json)
+    # Titles cached before display_title existed still carry download-site noise.
+    for b in books:
+        b["title"] = display_title(b.get("title"))
     return books
 
 
