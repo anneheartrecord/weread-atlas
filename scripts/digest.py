@@ -140,8 +140,10 @@ def run(paths, top=None, new=False, log=print):
         mode = "新书和有新笔记的书"
     else:
         n = top if top is not None else int(cfg.get("topN") or 50)
-        chosen = sorted(books, key=rank_key)[:n]
-        mode = "划线和想法最多的前 %d 本" % n
+        ranked = sorted(books, key=rank_key)
+        # 0 or less means every book with notes.
+        chosen = ranked[:n] if n > 0 else ranked
+        mode = "划线和想法最多的前 %d 本" % n if n > 0 else "全部有笔记的书"
 
     os.makedirs(paths.digest_dir, exist_ok=True)
     for old in glob.glob(os.path.join(paths.digest_dir, "digest-*.md")):
@@ -171,7 +173,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="生成给 agent 读的书目摘要 .atlas/digest/digest-NN.md。")
     ap.add_argument("--root", required=True, help="Obsidian 库里的 微信读书 根目录")
     g = ap.add_mutually_exclusive_group()
-    g.add_argument("--top", type=int, help="按划线加想法数排名取前 N 本，默认用配置里的 topN")
+    g.add_argument("--top", type=int, help="按划线加想法数排名取前 N 本，0 表示全部，默认用配置里的 topN")
     g.add_argument("--new", action="store_true", help="只摘要主题方案里还没提到的书，以及笔记比 topics.json 新的书")
     args = ap.parse_args(argv)
     try:
