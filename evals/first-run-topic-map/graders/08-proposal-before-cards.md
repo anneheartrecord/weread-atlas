@@ -4,4 +4,4 @@ focus: trace
 weight: 1
 ---
 
-A domain and topic proposal was written out for the user to confirm before any topic card was created.
+A proposal listing the domains, the topics and the relations between topics was written out for the user to confirm before any topic card was created.

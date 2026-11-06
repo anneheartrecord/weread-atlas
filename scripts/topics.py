@@ -29,6 +29,10 @@ MAX_WHY = 26
 MIN_VIEWPOINTS, MAX_VIEWPOINTS = 2, 8
 MAX_THOUGHTS, THOUGHTS_PER_BOOK, THOUGHT_FLOOR = 3, 1, 0.3
 MAX_HIGHLIGHTS, HIGHLIGHTS_PER_BOOK = 10, 2
+# From this many topics on, every topic must take part in at least one relation:
+# an unrelated topic is an isolated dot on the page's knowledge ring.
+MIN_TOPICS_FOR_RELATIONS = 4
+MAX_CANDIDATES = 15
 
 # common two-character words that say nothing about a topic
 STOP_BIGRAMS = {"我们", "一个", "自己", "他们", "没有", "什么", "这个", "就是", "因为", "所以", "如果",
@@ -128,6 +132,8 @@ def validate(data, books):
                         warnings.append("%s的观点来源不在书架上，会写成《%s》%s" % (label, b, _suggest(b, books)))
         _check_related(t, label, names, errors, warnings)
 
+    _check_isolated(topics, names, data.get("domains") or [], errors, warnings)
+
     assign = data.get("assign", {})
     if not isinstance(assign, dict):
         errors.append("assign 必须是对象")
@@ -143,7 +149,6 @@ def validate(data, books):
 def _check_related(t, label, names, errors, warnings):
     rel = t.get("related")
     if rel is None:
-        warnings.append("%s没有 related，书房页上它不会和其他主题连线" % label)
         return
     if not isinstance(rel, list):
         errors.append("%s的 related 必须是列表" % label)
@@ -164,6 +169,67 @@ def _check_related(t, label, names, errors, warnings):
             errors.append("%s的第 %d 条 related 缺少 why" % (label, j))
         elif len(why.strip()) > MAX_WHY:
             errors.append("%s和「%s」的 why 有 %d 个字，超过 %d 个字" % (label, other, len(why.strip()), MAX_WHY))
+
+
+def _valid_pairs(topics, names):
+    """Undirected (a, b) name pairs from every well-formed `related` entry."""
+    pairs = set()
+    for t in topics:
+        if not isinstance(t, dict) or t.get("name") not in names or not isinstance(t.get("related"), list):
+            continue
+        for r in t["related"]:
+            if isinstance(r, dict) and r.get("topic") in names and r.get("topic") != t["name"]:
+                pairs.add(tuple(sorted((t["name"], r["topic"]))))
+    return pairs
+
+
+def _check_isolated(topics, names, domains, errors, warnings):
+    if len(names) < MIN_TOPICS_FOR_RELATIONS:
+        return
+    pairs = _valid_pairs(topics, names)
+    linked = {n for p in pairs for n in p}
+    for t in topics:
+        if isinstance(t, dict) and t.get("name") in names and t["name"] not in linked:
+            errors.append("主题「%s」没有和任何主题建立关系，书房页的知识环上它会是一个孤点；"
+                          "至少写一条 related，下面列出的共读主题对可以参考" % t["name"])
+    domain_of = {t["name"]: t.get("domain") for t in topics if isinstance(t, dict) and t.get("name") in names}
+    used = {domain_of[n] for n in names}
+    if len(used) > 1 and pairs and not any(domain_of[a] != domain_of[b] for a, b in pairs):
+        warnings.append("没有一条跨领域的关系，书房页旁边的脉络栏会是空的；确认确实找不到真实的跨领域联系再继续")
+
+
+def relation_candidates(topics, books, limit=MAX_CANDIDATES):
+    """Topic pairs that share books but have no relation yet: the raw material for `related`.
+
+    Cross-domain pairs come first, then pairs sharing more books. Each item is
+    (a, b, cross, shared_file_names).
+    """
+    resolve = resolver(books)
+    names = {t.get("name") for t in topics if isinstance(t, dict) and _is_text(t.get("name"))}
+    have = _valid_pairs(topics, names)
+    shelf = {}
+    for t in topics:
+        if isinstance(t, dict) and t.get("name") in names and isinstance(t.get("books"), list):
+            shelf[t["name"]] = (t.get("domain"), {b["fileName"] for b in map(resolve, t["books"]) if b})
+    out = []
+    keys = sorted(shelf)
+    for i, a in enumerate(keys):
+        for b in keys[i + 1:]:
+            shared = sorted(shelf[a][1] & shelf[b][1])
+            if shared and (a, b) not in have:
+                out.append((a, b, shelf[a][0] != shelf[b][0], shared))
+    out.sort(key=lambda c: (not c[2], -len(c[3]), c[0], c[1]))
+    return out[:limit]
+
+
+def _log_candidates(topics, books, log):
+    cands = relation_candidates(topics, books)
+    if not cands:
+        return
+    log("这些主题共读过同一批书，但还没有写关系，写 related 时可以参考；是否真的相连、理由是什么，要读过卡片再判断：")
+    for a, b, cross, shared in cands:
+        more = "等 %d 本" % len(shared) if len(shared) > 3 else ""
+        log("  %s · %s%s：共读的书 %s%s" % (a, b, "（跨领域）" if cross else "", "、".join("《%s》" % f for f in shared[:3]), more))
 
 
 def relations(topics, log=None):
@@ -325,9 +391,12 @@ def run(paths, check_only=False, log=print):
         log("topics.json 有 %d 个问题，没有写入任何文件：" % len(errors))
         for i, e in enumerate(errors, 1):
             log("  %d. %s" % (i, e))
+        if isinstance(data, dict) and isinstance(data.get("topics"), list):
+            _log_candidates(data["topics"], books, log)
         return 1
     if check_only:
         log("topics.json 校验通过：%d 个领域，%d 个主题。" % (len(data["domains"]), len(data["topics"])))
+        _log_candidates(data["topics"], books, log)
         return 0
 
     cfg = lib.load_config(paths.root)
@@ -386,6 +455,12 @@ def run(paths, check_only=False, log=print):
         % (len(books), notes["created"], notes["updated"], notes["unchanged"], len(book_topics),
            sum(1 for v in book_domains.values() if v)))
     log("总览已写入 %s" % paths.overview)
+    rest = len(books) - len(book_topics)
+    if rest:
+        log("有笔记的书 %d 本，已归入主题 %d 本，还有 %d 本不在任何主题里。"
+            "要把剩下的书也归进主题，接着对 agent 说：更新书脉，把剩下的书也归进主题。" % (len(books), len(book_topics), rest))
+    else:
+        log("有笔记的书 %d 本，全部归入了主题。" % len(books))
     names = {t["name"] + ".md" for t in topics}
     if os.path.isdir(paths.topics_dir):
         stale = sorted(f[:-3] for f in os.listdir(paths.topics_dir) if f.endswith(".md") and f not in names

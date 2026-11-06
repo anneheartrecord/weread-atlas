@@ -14,7 +14,9 @@ the same data and config, so run the listing first.
 
 Thoughts are your own words, so all checks apply to them. Highlights are the
 book's text: finance books talk about money on every page, so highlights are
-only checked for contact and ID-like numbers.
+only checked for contact and ID-like numbers and the strong political words.
+Topic cards (the conclusions, viewpoints and relation reasons in topics.json)
+are listed separately: they cannot be hidden with --exclude, only edited.
 
 The word lists are plain constants: extend them for your own situation (for
 example add your employer, city or a partner's name to the matching list).
@@ -85,6 +87,19 @@ HEALTH_WORDS = [
     "确诊", "体检", "住院", "心理咨询", "复查",
 ]
 
+# Politically sensitive words. Mainland readers, platforms and employers react to these.
+# The strong list is checked everywhere; the broader list only in the owner's own thoughts,
+# because books mention governments and elections on every other page.
+POLITICAL_STRONG = [
+    "共产党", "党中央", "政治局", "习近平", "毛泽东", "毛主席", "文革", "文化大革命", "六四", "天安门",
+    "台独", "维稳", "翻墙", "言论自由", "宪政", "独裁", "极权", "专制",
+]
+POLITICAL_WORDS = POLITICAL_STRONG + ["党员", "政府", "政权", "民主", "集权", "审查", "选举", "台湾", "西藏", "新疆"]
+
+# Topic cards should state what books say. A first-person "我" (not "我们") means the owner's
+# own life slipped into text that is published in full.
+FIRST_PERSON = r"(?<![自本忘唯无])我(?!们)"  # 自我、忘我 are concepts, not the owner
+
 # A first-person sentence that also contains a number ("我去年存了…", "我 28 岁…").
 FIRST_PERSON_NUMBER = r"我[^。！？!?]{0,30}\d|\d[^。！？!?]{0,30}我"
 
@@ -97,8 +112,16 @@ THOUGHT_CHECKS = [
     ("健康", HEALTH_WORDS, False),
     ("年龄与身体数字", AGE_BODY_PATTERNS, True),
     ("带数字的个人经历", [FIRST_PERSON_NUMBER], True),
+    ("政治敏感", POLITICAL_WORDS, False),
 ]
-HIGHLIGHT_CHECKS = [("联系方式或证件号", CONTACT_PATTERNS, True)]
+HIGHLIGHT_CHECKS = [("联系方式或证件号", CONTACT_PATTERNS, True), ("政治敏感", POLITICAL_STRONG, False)]
+# Topic cards: conclusions, viewpoints and relation reasons the agent wrote. They state what books
+# say, so money words are normal there; what does not belong is the owner's own life or politics.
+TOPIC_CHECKS = [
+    ("第一人称的个人经历", [FIRST_PERSON], True),
+    ("年龄与身体数字", AGE_BODY_PATTERNS, True),
+    ("政治敏感", POLITICAL_STRONG, False),
+]
 
 CLIP = 120
 
@@ -159,6 +182,35 @@ def find(books, exclude):
     return found, counts
 
 
+def topic_texts(data):
+    """(topic, part, text) for every piece of agent-written text the page shows on topic cards."""
+    if not isinstance(data, dict):
+        return
+    for t in data.get("topics") or []:
+        if not isinstance(t, dict):
+            continue
+        name = t.get("name") or ""
+        if t.get("oneLiner"):
+            yield name, "一句话结论", str(t["oneLiner"])
+        for v in t.get("viewpoints") or []:
+            if isinstance(v, dict):
+                text = "".join(str(v.get(k) or "") for k in ("claim", "text"))
+                if text:
+                    yield name, "观点", "%s：%s" % (v.get("claim") or "", v.get("text") or "")
+        for r in t.get("related") or []:
+            if isinstance(r, dict) and r.get("why"):
+                yield name, "关系理由", "%s：%s" % (r.get("topic") or "", r["why"])
+
+
+def find_topic_text(data):
+    out = []
+    for name, part, text in topic_texts(data):
+        hits = flags(text, TOPIC_CHECKS)
+        if hits:
+            out.append({"topic": name, "part": part, "text": text, "flags": hits})
+    return out
+
+
 def run(paths, exclude_numbers=None, hide_numbers=None, log=print):
     cfg = lib.load_config(paths.root)
     hidden = set(cfg.get("hideBooks") or [])
@@ -203,6 +255,14 @@ def run(paths, exclude_numbers=None, hide_numbers=None, log=print):
         for i, u in enumerate(uploads, 1):
             log("[书%d] 《%s》：%s" % (i, u["book"], "，".join(u["reasons"])))
         log("要整本隐藏，运行：share_check.py --root <根目录> --hide-books 编号,编号")
+    topic_hits = find_topic_text(lib.read_json(paths.topics_json))
+    if topic_hits:
+        log("")
+        log("主题卡片里的文字有 %d 处值得再看一眼，它们会整句出现在页面上：" % len(topic_hits))
+        for h in topic_hits:
+            text = h["text"] if len(h["text"]) <= CLIP else h["text"][:CLIP] + "…"
+            log("[主题] 「%s」%s · %s：%s" % (h["topic"], h["part"], "、".join(h["flags"]), text))
+        log("这些是 agent 写的文字，不能用 --exclude 隐藏；要改就改 .atlas/topics.json，再运行 topics.py 和 render.py。")
     log("")
     log("部署时只上传 书房/index.html 这一个文件。.atlas/ 里有全部笔记原文和账号缓存，书/ 是笔记本身，都不要公开。")
     return 0

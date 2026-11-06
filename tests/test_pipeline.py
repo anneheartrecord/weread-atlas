@@ -248,11 +248,54 @@ class TopicsTest(Base):
             self.assertIn(needle, joined)
         self.assertFalse(os.path.exists(self.paths.topics_dir))
 
-    def test_missing_related_is_a_reminder(self):
+    def test_small_plan_without_related_still_writes(self):
         self.write_topics(self.good_topics())
         out = []
         self.assertEqual(topics.run(self.paths, log=out.append), 0)
-        self.assertTrue(any("没有 related" in line for line in out))
+
+    def four_topics(self):
+        data = self.good_topics()
+        base = data["topics"][0]
+        for i, name in enumerate(["种子与等待", "园丁的耐心", "星际想象"]):
+            t = dict(base, name=name, related=[])
+            if name == "星际想象":
+                t.update(domain="小说", books=["星海旅人", "复利花园"])
+            data["topics"].append(t)
+        del data["assign"]["星海旅人"]
+        return data
+
+    def test_isolated_topics_fail_and_candidates_are_listed(self):
+        data = self.four_topics()
+        data["topics"][0]["related"] = [{"topic": "种子与等待", "why": "等待本身就是复利的一部分"}]
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 1)
+        joined = "\n".join(out)
+        self.assertIn("「园丁的耐心」没有和任何主题建立关系", joined)
+        self.assertIn("「星际想象」没有和任何主题建立关系", joined)
+        self.assertNotIn("「种子与等待」没有和任何主题建立关系", joined)
+        self.assertIn("共读的书", joined)
+        self.assertIn("星际想象 · ", joined)  # a cross-domain candidate sharing 复利花园
+        self.assertFalse(os.path.exists(self.paths.topics_dir))
+
+    def test_check_prints_candidates_even_when_valid(self):
+        data = self.four_topics()
+        names = [t["name"] for t in data["topics"]]
+        for t, other in zip(data["topics"], names[1:] + names[:1]):
+            t["related"] = [{"topic": other, "why": "都在讲耐心的回报"}]
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, check_only=True, log=out.append), 0)
+        self.assertTrue(any("校验通过" in line for line in out))
+
+    def test_coverage_and_next_step_reported(self):
+        self.write_topics(self.good_topics())
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 0)
+        joined = "\n".join(out)
+        books = lib.read_json(self.paths.books_json)
+        self.assertIn("有笔记的书 %d 本，已归入主题 2 本，还有 %d 本不在任何主题里" % (len(books), len(books) - 2), joined)
+        self.assertIn("更新书脉", joined)
 
     def test_related_written_to_both_cards_and_read_back(self):
         self.write_topics(self.two_topics())
@@ -335,6 +378,36 @@ class ShareCheckTest(Base):
         share_check.run(self.paths, log=out.append)
         self.assertNotIn("女朋友", "\n".join(out))
         self.assertEqual(share_check.run(self.paths, exclude_numbers=[99], log=quiet), 1)
+
+    def test_political_words_flag_thoughts_and_highlights(self):
+        books = lib.read_json(self.paths.books_json)
+        books[0]["orphanThoughts"].append({"text": "这一段让我想到审查制度", "quote": None})
+        books[0]["chapters"][0]["highlights"].append({"text": "书里讲到文革时期的经历", "thought": None, "pos": 1001})
+        books[0]["chapters"][0]["highlights"].append({"text": "地方政府的财政收入", "thought": None, "pos": 1002})
+        lib.write_json(self.paths.books_json, books)
+        out = []
+        share_check.run(self.paths, log=out.append)
+        joined = "\n".join(out)
+        self.assertIn("政治敏感", joined)
+        self.assertIn("审查制度", joined)
+        self.assertIn("文革时期", joined)
+        self.assertNotIn("地方政府的财政", joined)  # common words only count in the owner's own thoughts
+
+    def test_topic_card_text_is_screened(self):
+        data = self.good_topics()
+        data["topics"][0]["oneLiner"] = "我月薪三万也攒不下钱"
+        data["topics"][0]["viewpoints"][0]["text"] = "独裁者靠印钞维持统治。"
+        data["topics"][0]["viewpoints"][1]["text"] = "工资和存款要分开管，自我约束比收入更重要。"
+        lib.write_json(self.paths.topics_json, data)
+        out = []
+        share_check.run(self.paths, log=out.append)
+        joined = "\n".join(out)
+        self.assertIn("主题卡片里的文字", joined)
+        self.assertIn("耐心的复利", joined)
+        self.assertIn("月薪三万", joined)
+        self.assertIn("独裁者", joined)
+        self.assertNotIn("工资和存款", joined)  # books talk about money; only the owner's own life is flagged
+        self.assertIn("topics.json", joined)
 
 
 if __name__ == "__main__":

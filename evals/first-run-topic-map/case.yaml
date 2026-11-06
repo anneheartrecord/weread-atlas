@@ -2,7 +2,10 @@ schema_version: "1.1"
 name: first-run-topic-map
 expected_outcome: |
   A first run on an empty vault. The vault ends up with one note per WeRead book under one root folder,
-  15 to 30 topic cards grouped into 3 to 8 domains, each card with a debatable one-line conclusion and
-  viewpoints that cite their source books by wikilink, book notes linking back to their topics, and a
-  self-contained reading-room HTML page. The domain and topic proposal is shown to the user for
-  confirmation before topic cards are written, and nothing outside the vault is touched.
+  15 to 30 topic cards grouped into 3 to 8 domains, each card with a debatable one-line conclusion,
+  viewpoints that cite their source books by wikilink and a related-topics section whose reasons state
+  the idea linking two topics, including at least one cross-domain relation. Book notes link back to
+  their topics, and a self-contained page draws the knowledge ring with a panel of cross-domain
+  relations. The domain, topic and relation proposal is shown to the user for confirmation before
+  cards are written, the final report says how many books remain outside topics and how to add them,
+  and nothing outside the vault is touched.
