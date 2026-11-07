@@ -93,12 +93,17 @@ def rank_key(b):
 
 
 def topic_references(topics):
+    """Names of the books topics.json places: the ones in a topic's `books` and the keys of
+    `assign`. A book only cited in a viewpoint is not placed yet, so --new lists it again.
+    Anything that is not a string is skipped; validation reports it."""
     refs = set()
-    for t in topics.get("topics") or []:
-        refs.update(t.get("books") or [])
-        for v in t.get("viewpoints") or []:
-            refs.update(v.get("books") or [])
-    refs.update((topics.get("assign") or {}).keys())
+    ts = topics.get("topics") if isinstance(topics.get("topics"), list) else []
+    for t in ts:
+        if isinstance(t, dict) and isinstance(t.get("books"), list):
+            refs.update(n for n in t["books"] if isinstance(n, str))
+    assign = topics.get("assign")
+    if isinstance(assign, dict):
+        refs.update(n for n in assign if isinstance(n, str))
     return refs
 
 

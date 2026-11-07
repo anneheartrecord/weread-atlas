@@ -276,6 +276,49 @@ class TopicsTest(Base):
         self.assertTrue(any(line.startswith("领域 2 个；") for line in out))
         self.assertNotIn("## 历史", self.read(self.paths.overview))
 
+    def test_malformed_values_give_errors_not_tracebacks(self):
+        for mutate in (lambda d: d["topics"][0].__setitem__("domain", ["成长与复利"]),
+                       lambda d: d.__setitem__("topics", 5),
+                       lambda d: d["topics"][0].__setitem__("books", "复利花园")):
+            data = self.good_topics()
+            mutate(data)
+            self.write_topics(data)
+            out = []
+            self.assertEqual(topics.run(self.paths, check_only=True, log=out.append), 1)
+            self.assertTrue(any("没有写入任何文件" in line for line in out))
+
+    def test_odd_viewpoint_source_does_not_crash_after_writing(self):
+        data = self.good_topics()
+        data["topics"][0]["viewpoints"][0]["books"] = [{"title": "复利花园"}]
+        data["assign"] = {}
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 0)
+        self.assertTrue(any("还没归类" in line for line in out))
+
+    def test_book_cited_only_in_a_viewpoint_is_not_placed(self):
+        data = self.good_topics()
+        data["assign"] = {}
+        data["topics"][0]["viewpoints"][0]["books"].append("星海旅人")
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 0)
+        self.assertTrue(any("其中 1 本还没归类" in line for line in out))
+        new = digest.select_new(lib.load_books(self.paths), self.paths)
+        self.assertIn("星海旅人", [b["fileName"] for b in new])
+
+    def test_two_assign_keys_for_one_book_first_wins_everywhere(self):
+        data = self.good_topics()
+        data["domains"].append("历史")
+        data["assign"] = {"星海旅人": "小说", "[[星海旅人]]": "历史"}
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 0)
+        self.assertTrue(any("是同一本书，只有前一条生效" in line for line in out))
+        self.assertTrue(any(line.startswith("领域 2 个；") for line in out))
+        self.assertEqual(lib.read_frontmatter(self.note("星海旅人"))["领域"], ["小说"])
+        self.assertNotIn("## 历史", self.read(self.paths.overview))
+
     def test_validation_lists_all_errors_and_writes_nothing(self):
         bad = self.good_topics()
         bad["topics"][0]["domain"] = "不存在"

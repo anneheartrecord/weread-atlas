@@ -148,6 +148,7 @@ def validate(data, books):
         errors.append("assign 必须是对象")
     else:
         in_topics = _topic_files(data, resolve)
+        first_key = {}
         for b, d in assign.items():
             found = resolve(b)
             if found is None:
@@ -156,6 +157,10 @@ def validate(data, books):
                 errors.append("assign 里「%s」的领域「%s」不在 domains 里，assign 的值要写一个领域名" % (b, d))
             elif found is not None and found["fileName"] in in_topics:
                 warnings.append("assign 里的「%s」已经在主题里，它的领域按所在主题算，这条 assign 不会生效" % b)
+            elif found is not None and found["fileName"] in first_key:
+                warnings.append("assign 里的「%s」和「%s」是同一本书，只有前一条生效" % (first_key[found["fileName"]], b))
+            if found is not None:
+                first_key.setdefault(found["fileName"], b)
     return errors, warnings
 
 
@@ -205,17 +210,23 @@ def _check_isolated(topics, names, domains, errors, warnings):
         if isinstance(t, dict) and t.get("name") in names and t["name"] not in linked:
             errors.append("主题「%s」没有和任何主题建立关系，书房页的知识环上它会是一个孤点；"
                           "至少写一条 related，下面列出的共读主题对可以参考" % t["name"])
-    domain_of = {t["name"]: t.get("domain") for t in topics if isinstance(t, dict) and t.get("name") in names}
+    domain_of = {t["name"]: (t.get("domain") if _is_text(t.get("domain")) else None)
+                 for t in topics if isinstance(t, dict) and t.get("name") in names}
     used = {domain_of[n] for n in names}
     if len(used) > 1 and pairs and not any(domain_of[a] != domain_of[b] for a, b in pairs):
         warnings.append("没有一条跨领域的关系，书房页旁边的脉络栏只能列同领域的关系；确认确实找不到真实的跨领域联系再继续")
 
 
+def _topic_list(data):
+    topics = data.get("topics")
+    return [t for t in topics if isinstance(t, dict)] if isinstance(topics, list) else []
+
+
 def _topic_files(data, resolve):
     """File names of the books listed in any topic; tolerates a topics.json that fails validation."""
     files = set()
-    for t in data.get("topics") or []:
-        if isinstance(t, dict) and isinstance(t.get("books"), list):
+    for t in _topic_list(data):
+        if isinstance(t.get("books"), list):
             for n in t["books"]:
                 b = resolve(n) if _is_text(n) else None
                 if b is not None:
@@ -223,17 +234,25 @@ def _topic_files(data, resolve):
     return files
 
 
+def _assigned(data, resolve, in_topics):
+    """{fileName: domain} for the assign entries that take effect, the way run() applies
+    them: books already in a topic keep their topics' domains, and when two keys name the
+    same book the first one wins."""
+    out = {}
+    assign = data.get("assign") if isinstance(data.get("assign"), dict) else {}
+    for n, d in assign.items():
+        b = resolve(n) if _is_text(n) else None
+        if b is not None and _is_text(d) and b["fileName"] not in in_topics and b["fileName"] not in out:
+            out[b["fileName"]] = d
+    return out
+
+
 def used_domains(data, books):
     """Domains the overview and the page show: the ones holding a topic, or a book that
     `assign` places there and that is in no topic (assign never moves a book out of its topics)."""
     resolve = resolver(books)
-    used = {t.get("domain") for t in data.get("topics") or [] if isinstance(t, dict)}
-    assign = data.get("assign") if isinstance(data.get("assign"), dict) else {}
-    in_topics = _topic_files(data, resolve)
-    for n, d in assign.items():
-        b = resolve(n) if _is_text(n) else None
-        if b is not None and b["fileName"] not in in_topics and _is_text(d):
-            used.add(d)
+    used = {t.get("domain") for t in _topic_list(data) if _is_text(t.get("domain"))}
+    used.update(_assigned(data, resolve, _topic_files(data, resolve)).values())
     domains = data.get("domains") if isinstance(data.get("domains"), list) else []
     return [d for d in domains if _is_text(d) and d in used]
 
@@ -462,10 +481,8 @@ def run(paths, check_only=False, log=print):
         for b in tb:
             book_topics.setdefault(b["fileName"], []).append(t["name"])
             book_domains.setdefault(b["fileName"], set()).add(t["domain"])
-    for n, d in assign.items():
-        f = resolve(n)["fileName"]
-        if f not in book_domains:
-            book_domains[f] = {d}
+    for f, d in _assigned(data, resolve, set(book_domains)).items():
+        book_domains[f] = {d}
     book_domains = {f: [d for d in domains if d in ds] for f, ds in book_domains.items()}
 
     related = relations(topics, log=log)
@@ -509,15 +526,15 @@ def run(paths, check_only=False, log=print):
     log("总览已写入 %s" % paths.overview)
     rest = len(books) - len(book_topics)
     if rest:
-        # digest.py --new skips every book topics.json mentions, assign included, so the
-        # follow-up sentence only helps with books mentioned nowhere.
+        # A book counts as placed when it is in a topic's books or in assign, the same rule
+        # digest.py --new uses, so the follow-up sentence only shows when it would list books.
         unplaced = len(books) - len(referenced_files(books, topic_references(data)))
         line = "有笔记的书 %d 本，已归入主题 %d 本，还有 %d 本不在任何主题里" % (len(books), len(book_topics), rest)
         if unplaced:
             line += ("，其中 %d 本还没归类。要把它们也归进主题，接着对 agent 说：更新书脉，把剩下的书也归进主题。"
                      % unplaced)
         else:
-            line += "，它们都已经写在 topics.json 里（多半是 assign），--new 不会再列出。想把其中某几本写进主题，直接告诉 agent 书名。"
+            line += "，它们都已经用 assign 分到了领域。想把其中某几本写进主题，直接告诉 agent 书名。"
         log(line)
     else:
         log("有笔记的书 %d 本，全部归入了主题。" % len(books))
