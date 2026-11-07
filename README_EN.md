@@ -114,6 +114,8 @@ Your data stays on your machine. The scripts call only the official WeRead API a
 
 - The first fetch of a few hundred books takes 10 to 20 minutes because the API does not allow parallel calls. Later updates take seconds.
 
+- How the skill is evaluated and reviewed, the results of each round and the issues still open are in [docs/review-log.md](docs/review-log.md) (in Chinese).
+
 ## License
 
 [MIT](LICENSE)
