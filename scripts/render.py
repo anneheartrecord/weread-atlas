@@ -216,27 +216,41 @@ def build_page_data(vault: Dict[str, Any]) -> Dict[str, Any]:
     def src(name: str) -> Dict[str, Any]:
         return {"title": name, "idx": ref(name)}
 
+    # A hidden book leaves the topic cards too: its title as a viewpoint source, and its
+    # thoughts and highlights picked for a card. Cards name books by file name, or by
+    # title when written by hand; a title shared with a shown book stays visible.
+    shown_names = set(book_idx) | set(title_idx)
+    hidden_names = set(hidden) | {b["title"] for b in vault["books"]
+                                  if b["file"] in hidden and b["title"] not in shown_names}
+
+    def shown(name: str) -> bool:
+        return name not in hidden_names
+
     page_topics = []
     for t in topics:
+        viewpoints = []
+        for v in t["viewpoints"]:
+            sources = [s["title"] for s in v["books"]]
+            kept = [n for n in sources if shown(n)]
+            if sources and not kept:
+                continue  # drawn only from hidden books, so it would describe them
+            viewpoints.append({"claim": v["claim"], "text": v["text"], "books": [src(n) for n in kept]})
         page_topics.append({
             "name": t["name"],
             "domain": t["domain"],
             "oneLiner": t["oneLiner"],
             "hours": t["hours"],
             "books": [book_idx[f] for f in t["books"] if f in book_idx],
-            "viewpoints": [
-                {"claim": v["claim"], "text": v["text"], "books": [src(s["title"]) for s in v["books"]]}
-                for v in t["viewpoints"]
-            ],
+            "viewpoints": viewpoints,
             "thoughts": [
                 {"text": x["text"], "quote": "" if excluded(x["quote"], fragments) else x["quote"], **_ref_or_none(x["book"], ref)}
                 for x in t["thoughts"]
-                if x["text"] and not excluded(x["text"], fragments)
+                if x["text"] and not excluded(x["text"], fragments) and shown(x["book"])
             ],
             "highlights": [
                 {"text": x["text"], **_ref_or_none(x["book"], ref)}
                 for x in t["highlights"]
-                if x["text"] and not excluded(x["text"], fragments)
+                if x["text"] and not excluded(x["text"], fragments) and shown(x["book"])
             ],
         })
 

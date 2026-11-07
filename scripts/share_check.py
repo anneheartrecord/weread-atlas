@@ -45,14 +45,16 @@ FINANCE_WORDS = [
     "存款", "储蓄", "积蓄", "存了", "攒了", "余额", "净资产", "身家",
     "负债", "房贷", "车贷", "贷款", "信用卡", "欠款",
     "持仓", "仓位", "加仓", "减仓", "清仓", "建仓", "割肉", "浮亏", "浮盈", "期权", "股票账户",
-    "买入", "卖出", "抄底", "职级", "年包",
+    "买入", "卖出", "抄底", "职级", "年包", "年入", "月入", "收入",
 ]
 
-# Age and body numbers: "今年刚好21", "25-26岁", "胖了 8.7KG", "瘦身 50 斤".
+# Age and body numbers: "今年刚好21", "25-26岁", "胖了 8.7KG", "瘦身 50 斤", "超重了五十斤", "BMI 刚好在30边缘".
 AGE_BODY_PATTERNS = [
     r"\d{2}\s*(岁|周岁)",
     r"今年\s*(刚好|才|已经)?\s*\d{2}",
     r"\d+(\.\d+)?\s*(kg|KG|Kg|公斤|斤)(?![A-Za-z])",
+    r"[一二三四五六七八九十两几百]+\s*(公斤|斤)",
+    r"BMI|体重|体脂|超重",
 ]
 
 # Books that look like the user's own uploads rather than published books:
@@ -79,6 +81,7 @@ FAMILY_WORDS = [
 WORK_WORDS = [
     "公司", "老板", "领导", "上司", "同事", "组长", "部门", "团队里", "离职", "跳槽", "辞职",
     "面试", "绩效", "晋升", "升职", "加班", "裁员", "入职", "试用期", "offer", "HR",
+    "裸辞", "gap", "Gap", "退休", "求职", "找工作", "转岗", "工时",
 ]
 
 # Health.
@@ -96,10 +99,6 @@ POLITICAL_STRONG = [
 ]
 POLITICAL_WORDS = POLITICAL_STRONG + ["党员", "政府", "政权", "民主", "集权", "审查", "选举", "台湾", "西藏", "新疆"]
 
-# Topic cards should state what books say. A first-person "我" (not "我们") means the owner's
-# own life slipped into text that is published in full.
-FIRST_PERSON = r"(?<![自本忘唯无])我(?!们)"  # 自我、忘我 are concepts, not the owner
-
 # A first-person sentence that also contains a number ("我去年存了…", "我 28 岁…").
 FIRST_PERSON_NUMBER = r"我[^。！？!?]{0,30}\d|\d[^。！？!?]{0,30}我"
 
@@ -116,10 +115,13 @@ THOUGHT_CHECKS = [
 ]
 HIGHLIGHT_CHECKS = [("联系方式或证件号", CONTACT_PATTERNS, True), ("政治敏感", POLITICAL_STRONG, False)]
 # Topic cards: conclusions, viewpoints and relation reasons the agent wrote. They state what books
-# say, so money words are normal there; what does not belong is the owner's own life or politics.
+# say, so money words, a quoted "我" and ages from a book ("30 岁以上") are normal there; what does
+# not belong is the owner's own life with its numbers, or politics.
+# The owner speaking about their own numbers, money or employer: "我月薪三万…", "我 28 岁…".
+FIRST_PERSON_FACT = (r"(?<![自本忘唯无])我(?![们执])[^。！？!?]{0,30}"
+                     r"(\d|[一二三四五六七八九十两百千]+\s*(万|千|岁|斤|公斤|块|元)|月薪|年薪|工资|存款|收入|公司|老板)")
 TOPIC_CHECKS = [
-    ("第一人称的个人经历", [FIRST_PERSON], True),
-    ("年龄与身体数字", AGE_BODY_PATTERNS, True),
+    ("第一人称的个人情况", [FIRST_PERSON_FACT], True),
     ("政治敏感", POLITICAL_STRONG, False),
 ]
 

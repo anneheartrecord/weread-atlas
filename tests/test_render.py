@@ -293,6 +293,24 @@ class TestData(RenderCase):
         book = [b for b in data["books"] if b["title"] == "第七个冬天"][0]
         self.assertEqual(book["author"], "")
 
+    def test_hidden_book_leaves_no_trace_on_topic_cards(self):
+        before, _ = page_data(self.render()[0])
+        cards_before = json.dumps(before["topics"], ensure_ascii=False)
+        self.assertIn('"title": "慢钱"', cards_before)  # cards cite the book by file name
+        cfg_path = self.root / ".atlas" / "config.json"
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+        cfg["hideBooks"] = ["慢钱"]
+        cfg_path.write_text(json.dumps(cfg, ensure_ascii=False), encoding="utf-8")
+        data, _ = page_data(self.render()[0])
+        for t in data["topics"]:
+            self.assertFalse(any(x["title"] == "慢钱" for x in t["thoughts"] + t["highlights"]), t["name"])
+            for v in t["viewpoints"]:
+                self.assertNotIn("慢钱", [s["title"] for s in v["books"]], t["name"])
+                self.assertTrue(v["books"], "a viewpoint left with no source should be dropped")
+        # a viewpoint that also cites a shown book stays, citing only that book
+        risk = next(t for t in data["topics"] if t["name"] == "风险与生存")
+        self.assertIn(["雾中航行"], [[s["title"] for s in v["books"]] for v in risk["viewpoints"]])
+
     def test_per_book_limits_and_card_text(self):
         data, _ = page_data(self.render()[0])
         for b in data["books"]:
