@@ -170,14 +170,24 @@ def build_page_data(vault: Dict[str, Any]) -> Dict[str, Any]:
     fragments = vault["config"]["exclude"]
     hidden = set(vault["config"].get("hideBooks") or [])
     books = [b for b in vault["books"] if b["file"] not in hidden]
-    topics = vault["topics"]
-    # Domain totals are recounted over the shown books, so a hidden book leaves no trace
-    # in a domain's count or hours.
+    # A topic whose books are all hidden would only describe them, so it leaves the page;
+    # the others keep only their shown books, and their hours are recounted over those.
+    topics = []
+    for t in vault["topics"]:
+        if t["books"] and all(f in hidden for f in t["books"]):
+            continue
+        if any(f in hidden for f in t["books"]):
+            t = dict(t, books=[f for f in t["books"] if f not in hidden],
+                     hours=round(sum(b["hours"] for b in books if b["file"] in t["books"]), 1))
+        topics.append(t)
+    # Domain totals are recounted over the shown books and topics, so a hidden book leaves
+    # no trace in a domain's count or hours.
     domains = []
     for d in vault["domains"]:
         dbooks = [b for b in books if d["name"] in b["domains"]]
-        if dbooks or d["topics"]:
-            domains.append(dict(d, books=len(dbooks), hours=round(sum(b["hours"] for b in dbooks), 1)))
+        dtopics = sum(1 for t in topics if t["domain"] == d["name"])
+        if dbooks or dtopics:
+            domains.append(dict(d, books=len(dbooks), hours=round(sum(b["hours"] for b in dbooks), 1), topics=dtopics))
     book_idx = {b["file"]: i for i, b in enumerate(books)}
     title_idx = {b["title"]: i for i, b in enumerate(books)}
     topic_idx = {t["name"]: i for i, t in enumerate(topics)}

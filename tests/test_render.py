@@ -481,10 +481,6 @@ class TestFrontmatterReading(unittest.TestCase):
         ])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class TestHideBooks(RenderCase):
     def test_hidden_book_is_left_off_the_page(self):
         cfg_path = self.root / ".atlas" / "config.json"
@@ -494,3 +490,45 @@ class TestHideBooks(RenderCase):
         html, _ = self.render()
         data, raw = page_data(html)
         self.assertNotIn("第七个冬天", [b["title"] for b in data["books"]])
+
+
+    def hide(self, *files):
+        cfg_path = self.root / ".atlas" / "config.json"
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+        cfg["hideBooks"] = list(files)
+        cfg_path.write_text(json.dumps(cfg, ensure_ascii=False), encoding="utf-8")
+
+    def test_hidden_book_with_a_middle_dot_in_its_name_leaves_the_cards(self):
+        # Rename 慢钱 to 查理·慢钱 everywhere, the way a translated title looks.
+        old, new = self.root / "书" / "慢钱.md", self.root / "书" / "查理·慢钱.md"
+        old.rename(new)
+        for f in list((self.root / "书").glob("*.md")) + list((self.root / "主题").glob("*.md")):
+            f.write_text(f.read_text(encoding="utf-8").replace("[[慢钱]]", "[[查理·慢钱]]"), encoding="utf-8")
+        data, _ = page_data(self.render()[0])
+        cited = json.dumps(data["topics"], ensure_ascii=False)
+        self.assertIn('"title": "查理·慢钱"', cited)  # read back whole, not split at the dot
+        self.hide("查理·慢钱")
+        data, _ = page_data(self.render()[0])
+        cited = json.dumps(data["topics"], ensure_ascii=False)
+        self.assertNotIn("查理", cited)
+        self.assertNotIn("慢钱", cited)
+
+    def test_topic_hours_count_only_shown_books_and_empty_topics_leave(self):
+        data, _ = page_data(self.render()[0])
+        before = {t["name"]: t["hours"] for t in data["topics"]}
+        self.assertIn("清晰写作", before)
+        self.hide("慢钱", "一条线", "删掉形容词")
+        data, _ = page_data(self.render()[0])
+        names = [t["name"] for t in data["topics"]]
+        self.assertNotIn("清晰写作", names)  # both of its books are hidden
+        hours = {b["title"]: b["hours"] for b in data["books"]}
+        risk = next(t for t in data["topics"] if t["name"] == "风险与生存")
+        self.assertLess(risk["hours"], before["风险与生存"])
+        self.assertAlmostEqual(risk["hours"], round(sum(data["books"][i]["hours"] for i in risk["books"]), 1))
+        for rel in data["relations"]:
+            self.assertLess(max(rel["a"], rel["b"]), len(data["topics"]))
+        self.assertTrue(all(d["topics"] == sum(1 for t in data["topics"] if t["domain"] == d["name"])
+                            for d in data["domains"]))
+
+if __name__ == "__main__":
+    unittest.main()

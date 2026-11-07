@@ -108,11 +108,16 @@ def as_number(v: Any, field: str, where: str, warnings: List[str]) -> float:
         return 0.0
 
 
+# One source in a `·`-separated list. A `·` inside [[…]] or 《…》 belongs to the book's name
+# (查理·芒格), so links and titles are matched whole before plain text is split on it.
+_SOURCE_PART = re.compile(r"\s*(\[\[[^\]]*\]\]|《[^》]*》|[^·\s][^·]*)")
+
+
 def parse_sources(s: str) -> List[Dict[str, Any]]:
     """`[[书A]] · 《书B》` → [{"title": "书A", "linked": True}, ...]."""
     out = []
-    for part in re.split(r"\s*·\s*", s.strip()):
-        part = part.strip()
+    for m in _SOURCE_PART.finditer(s.strip()):
+        part = m.group(1).strip()
         if not part:
             continue
         m = _LINK.search(part)
