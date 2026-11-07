@@ -21,7 +21,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import atlas_lib as lib  # noqa: E402
-from digest import all_thoughts, highlight_score  # noqa: E402
+from digest import all_thoughts, highlight_score, referenced_files, topic_references  # noqa: E402
 from notes import write_book_note  # noqa: E402
 
 MAX_ONELINER = 40
@@ -509,8 +509,16 @@ def run(paths, check_only=False, log=print):
     log("总览已写入 %s" % paths.overview)
     rest = len(books) - len(book_topics)
     if rest:
-        log("有笔记的书 %d 本，已归入主题 %d 本，还有 %d 本不在任何主题里。"
-            "要把剩下的书也归进主题，接着对 agent 说：更新书脉，把剩下的书也归进主题。" % (len(books), len(book_topics), rest))
+        # digest.py --new skips every book topics.json mentions, assign included, so the
+        # follow-up sentence only helps with books mentioned nowhere.
+        unplaced = len(books) - len(referenced_files(books, topic_references(data)))
+        line = "有笔记的书 %d 本，已归入主题 %d 本，还有 %d 本不在任何主题里" % (len(books), len(book_topics), rest)
+        if unplaced:
+            line += ("，其中 %d 本还没归类。要把它们也归进主题，接着对 agent 说：更新书脉，把剩下的书也归进主题。"
+                     % unplaced)
+        else:
+            line += "，它们都已经写在 topics.json 里（多半是 assign），--new 不会再列出。想把其中某几本写进主题，直接告诉 agent 书名。"
+        log(line)
     else:
         log("有笔记的书 %d 本，全部归入了主题。" % len(books))
     names = {t["name"] + ".md" for t in topics}

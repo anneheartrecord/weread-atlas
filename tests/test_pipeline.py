@@ -434,7 +434,18 @@ class TopicsTest(Base):
         joined = "\n".join(out)
         books = lib.read_json(self.paths.books_json)
         self.assertIn("有笔记的书 %d 本，已归入主题 2 本，还有 %d 本不在任何主题里" % (len(books), len(books) - 2), joined)
-        self.assertIn("更新书脉", joined)
+        # the one book left over is in assign, so --new would list nothing: no follow-up sentence
+        self.assertNotIn("更新书脉", joined)
+        self.assertIn("直接告诉 agent 书名", joined)
+
+        data = self.good_topics()
+        data["assign"] = {}
+        self.write_topics(data)
+        out = []
+        self.assertEqual(topics.run(self.paths, log=out.append), 0)
+        joined = "\n".join(out)
+        self.assertIn("其中 1 本还没归类", joined)
+        self.assertIn("更新书脉，把剩下的书也归进主题", joined)
 
     def test_related_written_to_both_cards_and_read_back(self):
         self.write_topics(self.two_topics())
