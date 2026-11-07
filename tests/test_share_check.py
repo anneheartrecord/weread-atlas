@@ -14,7 +14,8 @@ class ShareCheckRulesTest(unittest.TestCase):
     def test_numbers_and_job_plans_without_keywords_are_flagged(self):
         cases = {"超重了五十斤": "年龄与身体数字", "BMI 刚好在30边缘": "年龄与身体数字",
                  "那年年入80，不算多": "收入与持仓", "想 gap 半年再找": "工作单位与同事",
-                 "准备裸辞": "工作单位与同事"}
+                 "准备裸辞": "工作单位与同事", "一把手的权力完全没有人监督": "政治敏感",
+                 "目前还没有任何债务和借款": "收入与持仓", "大厂员工，副业探索者": "工作单位与同事"}
         for text, label in cases.items():
             self.assertIn(label, share_check.flags(text, share_check.THOUGHT_CHECKS), text)
 
